@@ -78,6 +78,7 @@ export const skills = [
 export const experience = [
   {
     company: "Glide in Bir",
+    slug: "glide-in-bir",
     role: "Founder & Full-Stack Developer",
     date: "2026 — Present",
     description:
@@ -86,6 +87,7 @@ export const experience = [
   },
   {
     company: "Dell Store",
+    slug: "dell-store",
     role: "Full-Stack Developer",
     date: "2025",
     description:
@@ -94,6 +96,7 @@ export const experience = [
   },
   {
     company: "PlantShed",
+    slug: "plantshed",
     role: "Frontend Developer",
     date: "2024",
     description:

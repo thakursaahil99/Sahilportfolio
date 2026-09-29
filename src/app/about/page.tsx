@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import AboutHero from "@/components/about/AboutHero";
 import About from "@/components/About";
+import BaseCamp from "@/components/about/BaseCamp";
 import Arsenal from "@/components/Arsenal";
 import Experience from "@/components/Experience";
 import Principles from "@/components/about/Principles";
@@ -17,10 +18,11 @@ export default function AboutPage() {
     <main className="relative">
       <AboutHero />
       <About />
+      <BaseCamp />
       <Arsenal />
-      <Experience />
+      <Experience index="04" />
       <Principles />
-      <ContactCTA />
+      <ContactCTA index="06" />
     </main>
   );
 }

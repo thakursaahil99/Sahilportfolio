@@ -26,7 +26,7 @@ const PRINCIPLES = [
 export default function Principles() {
   return (
     <section className="px-6 py-28 md:px-12 md:py-40">
-      <SectionTag index="04" label="Principles — Operating system" />
+      <SectionTag index="05" label="Principles — Operating system" />
       <RevealText
         as="h2"
         text="How I build."

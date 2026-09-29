@@ -32,7 +32,7 @@ function PowerBar({ level, index }: { level: number; index: number }) {
 export default function Arsenal() {
   return (
     <section id="arsenal" className="relative px-6 py-28 md:px-12 md:py-40">
-      <SectionTag index="02" label="Arsenal — Suit modules" />
+      <SectionTag index="03" label="Arsenal — Suit modules" />
 
       <div className="mb-16 flex flex-col gap-8 md:mb-24 md:flex-row md:items-end md:justify-between">
         <RevealText

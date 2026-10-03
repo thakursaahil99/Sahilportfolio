@@ -1,19 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { useIntroDone } from "@/lib/use-intro";
+import { getLenis } from "@/lib/smooth-scroll";
 import { profile } from "@/data/profile";
+import { NAV } from "@/data/nav";
 import LocalClock from "./fx/LocalClock";
+import Logo from "./Logo";
 import TLink from "./transition/TLink";
 
-const NAV = [
-  { label: "Home", href: "/" },
-  { label: "Work", href: "/work" },
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
-];
 
 const EASE = [0.76, 0, 0.24, 1] as const;
 
@@ -51,23 +48,42 @@ export default function Navbar() {
     setHidden(y > prev && y > 200);
   });
 
+  // close the menu after navigating
+  const [menuPath, setMenuPath] = useState(pathname);
+  if (menuPath !== pathname) {
+    setMenuPath(pathname);
+    setOpen(false);
+  }
+
+  // lock page scroll while the mobile menu is open
+  useEffect(() => {
+    if (!open) return;
+    document.documentElement.style.overflow = "hidden";
+    getLenis()?.stop();
+    return () => {
+      document.documentElement.style.overflow = "";
+      getLenis()?.start();
+    };
+  }, [open]);
+
   return (
     <>
       <motion.header
+        data-no-print
         initial={{ y: -100 }}
         animate={{ y: !intro || (hidden && !open) ? -100 : 0 }}
         transition={{ duration: 0.8, ease: EASE, delay: intro && !hidden ? 0.3 : 0 }}
-        className="fixed inset-x-0 top-0 z-[120] px-6 py-5 md:px-12 mix-blend-difference"
+        className={`fixed inset-x-0 top-0 z-[120] px-6 py-5 md:px-12 ${open ? "text-background" : "mix-blend-difference"}`}
       >
-        <nav className="flex items-center justify-between text-ink">
-          <TLink href="/" className="flex items-baseline gap-3" aria-label="Home">
-            <span className="font-display text-xl font-black tracking-tight">S/T</span>
-            <span className="hidden sm:block font-mono text-[10px] tracking-[0.25em] uppercase opacity-70">
-              {profile.name} ©{new Date().getFullYear()}
+        <nav className={`flex items-center justify-between ${open ? "" : "text-ink"}`}>
+          <TLink href="/" onClick={() => setOpen(false)} className="flex items-baseline gap-3" aria-label="Home">
+            <Logo className="text-xl md:text-2xl" mono={open} />
+            <span className="hidden lg:block font-mono text-[10px] tracking-[0.25em] uppercase opacity-60">
+              {profile.role}
             </span>
           </TLink>
 
-          <ul className="hidden md:flex items-center gap-9 font-mono text-[11px] tracking-[0.25em] uppercase">
+          <ul className="hidden md:flex items-center gap-6 lg:gap-9 font-mono text-[11px] tracking-[0.25em] uppercase">
             {NAV.map((item) => (
               <li key={item.href}>
                 <RollLink label={item.label} href={item.href} active={isActive(pathname, item.href)} />
@@ -75,18 +91,27 @@ export default function Navbar() {
             ))}
           </ul>
 
-          <div className="hidden lg:flex items-center gap-3 font-mono text-[10px] tracking-[0.25em] uppercase">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ink opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-ink" />
+          <div className="hidden md:flex items-center gap-6 font-mono text-[10px] tracking-[0.25em] uppercase">
+            <span className="hidden xl:flex items-center gap-3">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ink opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-ink" />
+              </span>
+              <LocalClock />
             </span>
-            <LocalClock />
+            <TLink
+              href="/resume"
+              className="rounded-full border border-ink/60 px-4 py-2 text-ink transition-colors duration-300 hover:bg-ink hover:text-background"
+            >
+              Résumé ↗
+            </TLink>
           </div>
 
           <button
             onClick={() => setOpen((v) => !v)}
-            className="md:hidden font-mono text-[11px] tracking-[0.25em] uppercase"
+            className="md:hidden -m-3 p-3 font-mono text-[11px] tracking-[0.25em] uppercase"
             aria-expanded={open}
+            aria-label={open ? "Close menu" : "Open menu"}
           >
             {open ? "Close" : "Menu"}
           </button>
@@ -97,10 +122,10 @@ export default function Navbar() {
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ clipPath: "circle(0% at 92% 4%)" }}
-            animate={{ clipPath: "circle(150% at 92% 4%)" }}
-            exit={{ clipPath: "circle(0% at 92% 4%)" }}
-            transition={{ duration: 0.9, ease: EASE }}
+            initial={{ clipPath: "inset(0 0 100% 0)" }}
+            animate={{ clipPath: "inset(0 0 0% 0)" }}
+            exit={{ clipPath: "inset(0 0 100% 0)" }}
+            transition={{ duration: 0.7, ease: EASE }}
             className="fixed inset-0 z-[110] flex flex-col justify-between bg-red px-6 pt-28 pb-10 md:hidden"
           >
             <ul className="space-y-2">
@@ -110,7 +135,7 @@ export default function Navbar() {
                     initial={{ y: "110%" }}
                     animate={{ y: 0 }}
                     exit={{ y: "110%" }}
-                    transition={{ duration: 0.7, ease: EASE, delay: 0.15 + i * 0.06 }}
+                    transition={{ duration: 0.6, ease: EASE, delay: 0.2 + i * 0.07 }}
                   >
                     <TLink
                       href={item.href}
@@ -124,6 +149,13 @@ export default function Navbar() {
                 </li>
               ))}
             </ul>
+            <TLink
+              href="/resume"
+              onClick={() => setOpen(false)}
+              className="self-start rounded-full border-2 border-background px-6 py-3 font-mono text-xs font-semibold tracking-[0.25em] uppercase text-background"
+            >
+              View résumé ↗
+            </TLink>
             <div className="flex justify-between font-mono text-[10px] tracking-[0.25em] uppercase text-background">
               <span>{profile.location.split(",")[0]}</span>
               <LocalClock />

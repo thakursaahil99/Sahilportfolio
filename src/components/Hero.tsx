@@ -52,8 +52,9 @@ export default function Hero() {
       />
 
       {/* readability */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-background via-background/40 to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-background/70 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-background via-background/50 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-background/90 via-background/50 to-transparent md:h-56" />
+      <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-1/2 bg-gradient-to-r from-background/60 to-transparent md:block" />
 
       <div className="pointer-events-none relative z-10 flex h-full flex-col justify-between px-6 pt-28 pb-8 md:px-12 md:pt-32">
         {/* top row */}

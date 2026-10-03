@@ -1,8 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import SectionTag from "../SectionTag";
 import RevealText from "../fx/RevealText";
+
+const OUT = [0.16, 1, 0.3, 1] as const;
 
 const PRINCIPLES = [
   {
@@ -23,38 +26,60 @@ const PRINCIPLES = [
   },
 ];
 
-export default function Principles() {
+/** One principle: an outlined title that fills with molten colour as it scrolls through the viewport. */
+function Row({ p, i }: { p: (typeof PRINCIPLES)[number]; i: number }) {
+  const ref = useRef<HTMLLIElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start 0.9", "start 0.35"] });
+  const fill = useSpring(scrollYProgress, { stiffness: 120, damping: 30 });
+  const clip = useTransform(fill, (v) => `inset(0 ${100 - v * 100}% 0 0)`);
+  const numY = useTransform(fill, [0, 1], ["40%", "0%"]);
+
+  return (
+    <li ref={ref} className="group relative grid gap-6 border-b border-line py-10 md:grid-cols-[120px_1fr_320px] md:items-center md:gap-10 md:py-14">
+      <motion.span style={{ y: numY }} className="font-mono text-sm tracking-[0.3em] text-red">
+        ({String(i + 1).padStart(2, "0")})
+      </motion.span>
+
+      <h3 className="relative font-display text-[11vw] font-black uppercase leading-[0.9] tracking-[-0.05em] md:text-[5.6vw]">
+        <span className="text-outline">{p.title}</span>
+        {/* solid copy revealed left→right by scroll */}
+        <motion.span aria-hidden="true" style={{ clipPath: clip }} className="text-molten absolute inset-0">
+          {p.title}
+        </motion.span>
+      </h3>
+
+      <motion.p
+        initial={{ opacity: 0, x: 30 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true, amount: 0.6 }}
+        transition={{ duration: 0.9, ease: OUT, delay: 0.15 }}
+        className="text-base leading-relaxed text-ink/70 md:text-lg"
+      >
+        {p.body}
+      </motion.p>
+    </li>
+  );
+}
+
+export default function Principles({ index = "05" }: { index?: string }) {
   return (
     <section className="px-6 py-28 md:px-12 md:py-40">
-      <SectionTag index="05" label="Principles — Operating system" />
-      <RevealText
-        as="h2"
-        text="How I build."
-        className="mb-16 block font-display text-[9vw] md:text-[3.6vw] font-black uppercase leading-[0.9] tracking-[-0.04em] md:mb-24"
-      />
-      <div className="grid border-t border-l border-line md:grid-cols-2 lg:grid-cols-4">
-        {PRINCIPLES.map((p, i) => (
-          <motion.div
-            key={p.title}
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.9, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="group relative flex min-h-[340px] flex-col justify-between overflow-hidden border-r border-b border-line p-6 md:p-8"
-          >
-            <span className="absolute inset-0 origin-bottom scale-y-0 bg-gold transition-transform duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] group-hover:scale-y-100" />
-            <span className="relative font-display text-5xl font-black text-ink/15 transition-colors duration-500 group-hover:text-background/30">
-              {String(i + 1).padStart(2, "0")}
-            </span>
-            <div className="relative transition-colors duration-500 group-hover:text-background">
-              <h3 className="mb-3 font-display text-xl font-black uppercase tracking-tight">{p.title}</h3>
-              <p className="text-sm leading-relaxed text-muted transition-colors duration-500 group-hover:text-background/80">
-                {p.body}
-              </p>
-            </div>
-          </motion.div>
-        ))}
+      <SectionTag index={index} label="Principles — Operating system" />
+      <div className="mb-12 flex flex-col gap-6 md:mb-16 md:flex-row md:items-end md:justify-between">
+        <RevealText
+          as="h2"
+          text="How I build."
+          className="block font-display text-[14vw] font-black uppercase leading-[0.88] tracking-[-0.05em] md:text-[7vw]"
+        />
+        <p className="max-w-xs text-sm leading-relaxed text-ink/60 md:text-right">
+          Four rules I don&apos;t break, on every project — big or small.
+        </p>
       </div>
+      <ol className="border-t border-line">
+        {PRINCIPLES.map((p, i) => (
+          <Row key={p.title} p={p} i={i} />
+        ))}
+      </ol>
     </section>
   );
 }

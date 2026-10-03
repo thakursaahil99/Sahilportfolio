@@ -3,7 +3,7 @@ import TLink from "@/components/transition/TLink";
 export default function NotFound() {
   return (
     <main className="relative flex min-h-[100svh] flex-col items-start justify-center overflow-hidden px-6 md:px-12">
-      <div className="pointer-events-none absolute right-0 top-1/4 h-[500px] w-[500px] rounded-full bg-red/20 blur-[140px]" />
+      <div className="pointer-events-none absolute right-0 top-1/4 h-[500px] w-[500px] bg-[radial-gradient(closest-side,rgb(255_45_32/0.2),transparent)]" />
       <p className="eyebrow relative mb-6">[ Error 404 — Signal lost ]</p>
       <h1 className="relative font-display text-[24vw] md:text-[14vw] font-black leading-[0.8] tracking-[-0.06em] text-molten">
         404

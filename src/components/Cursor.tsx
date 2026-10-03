@@ -73,6 +73,7 @@ export default function Cursor() {
   return (
     <motion.div
       aria-hidden="true"
+      data-no-print
       className="fixed top-0 left-0 z-[200] pointer-events-none flex items-center justify-center rounded-full bg-ink mix-blend-difference"
       style={{ x: sx, y: sy, translateX: "-50%", translateY: "-50%" }}
       animate={{ width: size, height: size, scale: pressed ? 0.8 : 1 }}

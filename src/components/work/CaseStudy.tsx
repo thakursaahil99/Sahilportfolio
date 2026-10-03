@@ -59,6 +59,66 @@ function ExpandingCover({ project }: { project: Project }) {
   );
 }
 
+const host = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+
+/** The case in three beats. The result uses real figures when provided, otherwise a factual shipped line. */
+function BriefToResult({ project, accent }: { project: Project; accent: string }) {
+  const result =
+    project.outcome ??
+    (project.link
+      ? `Shipped in ${project.year} and live in production at ${host(project.link)}.`
+      : `Delivered in ${project.year} as a private client build.`);
+  const beats = [
+    { k: "The brief", body: project.overview[0] },
+    { k: "The approach", body: project.overview[1] ?? project.features.slice(0, 2).join(". ") + "." },
+    { k: "The result", body: result },
+  ];
+
+  return (
+    <div className="relative grid gap-4 md:grid-cols-3">
+      {/* connector line that draws across the three beats */}
+      <motion.span
+        aria-hidden="true"
+        initial={{ scaleX: 0 }}
+        whileInView={{ scaleX: 1 }}
+        viewport={{ once: true, amount: 0.5 }}
+        transition={{ duration: 1.4, ease: EASE }}
+        className="absolute left-0 right-0 top-10 hidden h-px origin-left md:block"
+        style={{ background: `linear-gradient(90deg, ${accent}, transparent)` }}
+      />
+      {beats.map((b, i) => (
+        <motion.div
+          key={b.k}
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.4 }}
+          transition={{ duration: 0.9, ease: EASE, delay: i * 0.12 }}
+          className="relative rounded-2xl border border-line bg-panel p-6 md:p-8"
+        >
+          <span
+            className="mb-8 flex h-8 w-8 items-center justify-center rounded-full font-mono text-[11px] text-background"
+            style={{ background: i === 2 ? accent : "var(--ink)" }}
+          >
+            {pad(i + 1)}
+          </span>
+          <p className="eyebrow mb-3">{b.k}</p>
+          <p className="text-base leading-relaxed text-ink/80 md:text-lg">{b.body}</p>
+          {i === 2 && project.metrics && project.metrics.length > 0 && (
+            <ul className="mt-6 grid grid-cols-2 gap-4 border-t border-line pt-6">
+              {project.metrics.map((m) => (
+                <li key={m.label}>
+                  <span className="block font-display text-3xl font-black text-molten md:text-4xl">{m.value}</span>
+                  <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-muted">{m.label}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
 function Gallery({ project }: { project: Project }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const shots = project.gallery ?? [];
@@ -68,7 +128,7 @@ function Gallery({ project }: { project: Project }) {
     <section className="py-28 md:py-40">
       <div className="mb-12 flex items-end justify-between px-6 md:px-12">
         <div>
-          <Label n="04" text="Gallery" />
+          <Label n="05" text="Gallery" />
           <h2 className="mt-6 font-display text-[8vw] md:text-[3.2vw] font-black uppercase leading-[0.9] tracking-[-0.04em]">
             Inside the build
           </h2>
@@ -239,29 +299,21 @@ export default function CaseStudy({ project, next, index }: { project: Project; 
       {/* ---------- overview ---------- */}
       <section className="grid gap-4 px-6 py-28 md:grid-cols-[260px_1fr] md:gap-16 md:px-12 md:py-40">
         <Label n="01" text="Overview" />
-        <div>
-          <ScrollLitText
-            text={project.overview[0]}
-            className="font-display text-[5.5vw] md:text-[2vw] font-medium leading-[1.15] tracking-[-0.02em]"
-          />
-          {project.overview.slice(1).map((p) => (
-            <motion.p
-              key={p}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.5 }}
-              transition={{ duration: 1, ease: EASE }}
-              className="mt-10 max-w-3xl text-base md:text-xl leading-relaxed text-muted"
-            >
-              {p}
-            </motion.p>
-          ))}
-        </div>
+        <ScrollLitText
+          text={project.summary}
+          className="font-display text-[5.5vw] md:text-[2vw] font-medium leading-[1.15] tracking-[-0.02em]"
+        />
+      </section>
+
+      {/* ---------- brief → approach → result ---------- */}
+      <section className="grid gap-4 px-6 pb-28 md:grid-cols-[260px_1fr] md:gap-16 md:px-12 md:pb-40">
+        <Label n="02" text="Brief → Result" />
+        <BriefToResult project={project} accent={accent} />
       </section>
 
       {/* ---------- features ---------- */}
       <section className="grid gap-4 px-6 pb-28 md:grid-cols-[260px_1fr] md:gap-16 md:px-12 md:pb-40">
-        <Label n="02" text="What I built" />
+        <Label n="03" text="What I built" />
         <ol className="border-t border-line">
           {project.features.map((f, i) => (
             <motion.li
@@ -291,7 +343,7 @@ export default function CaseStudy({ project, next, index }: { project: Project; 
 
       {/* ---------- stack ---------- */}
       <section className="grid gap-4 px-6 pb-12 md:grid-cols-[260px_1fr] md:gap-16 md:px-12">
-        <Label n="03" text="Tech stack" />
+        <Label n="04" text="Tech stack" />
         <div className={`grid gap-4 [perspective:1400px] ${project.stack.length > 3 ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
           {project.stack.map((group, gi) => (
             <SpotlightCard key={group.label} className="p-6 md:p-8">

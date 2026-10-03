@@ -143,13 +143,13 @@ function ServiceCard({ service, index, progress }: { service: Service; index: nu
   );
 }
 
-export default function Services() {
+export default function Services({ index = "02" }: { index?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
 
   return (
     <section className="relative px-6 pt-20 md:px-12 md:pt-28">
-      <SectionTag index="02" label="Services — What I build" />
+      <SectionTag index={index} label="Services — What I build" />
       <RevealText
         as="h2"
         text="Four ways I can suit you up."

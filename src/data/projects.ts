@@ -31,6 +31,10 @@ export interface Project {
   role: string;
   link?: string;
   repo?: string;
+  /** the result in one or two sentences; falls back to a factual "shipped" line when omitted */
+  outcome?: string;
+  /** headline numbers for the result, e.g. { value: "40%", label: "faster page loads" } — only real figures */
+  metrics?: { value: string; label: string }[];
   featured?: boolean;
 }
 
@@ -169,6 +173,7 @@ export const projects: Project[] = [
       { label: "Services", items: ["Firebase", "Google Maps API", "Social Auth"] },
     ],
     cover: "/projects/pahadibhai.jpg",
+    gallery: [{ src: "/projects/pahadibhai/apps.jpg", caption: "Checkout, store network & mobile apps", url: "https://pahadibhai.in" }],
     accent: "green",
     year: "2025",
     role: "Full-Stack Developer",
@@ -274,9 +279,16 @@ export const projects: Project[] = [
       { label: "Commerce", items: ["Magento 2", "PHP", "MySQL"] },
       { label: "Frontend", items: ["Tailwind CSS", "GraphQL"] },
     ],
+    cover: "/projects/dell-store/cover-0.jpg",
+    gallery: [
+      { src: "/projects/dell-store/featured.jpg", caption: "Category grid & featured products", url: "https://www.dellstore.com" },
+      { src: "/projects/dell-store/xps.jpg", caption: "XPS product showcase", url: "https://www.dellstore.com" },
+      { src: "/projects/dell-store/support.jpg", caption: "Support hub & account", url: "https://www.dellstore.com" },
+    ],
     accent: "blue",
     year: "2025",
     role: "Full-Stack Developer",
+    link: "https://www.dellstore.com",
   },
   {
     slug: "plantshed",
@@ -298,9 +310,17 @@ export const projects: Project[] = [
       { label: "Commerce", items: ["Magento 2"] },
       { label: "Frontend", items: ["Tailwind CSS", "Alpine.js"] },
     ],
+    cover: "/projects/plantshed/cover-0.jpg",
+    gallery: [
+      { src: "/projects/plantshed/picks.jpg", caption: "Picks of the season", url: "https://www.plantshed.com" },
+      { src: "/projects/plantshed/collections.jpg", caption: "Collections & subscriptions", url: "https://www.plantshed.com" },
+      { src: "/projects/plantshed/services.jpg", caption: "Services — florals, plants & design", url: "https://www.plantshed.com" },
+      { src: "/projects/plantshed/cafes.jpg", caption: "PlantShed cafés", url: "https://www.plantshed.com" },
+    ],
     accent: "cyan",
     year: "2024",
     role: "Frontend Developer",
+    link: "https://www.plantshed.com",
   },
 ];
 

@@ -6,12 +6,12 @@ export default function ProjectArt({ accent, className = "" }: { accent: Accent;
   return (
     <div className={`pointer-events-none absolute inset-0 ${className}`}>
       <div
-        className="animate-blob absolute -left-1/4 top-1/4 h-[70%] w-[70%] rounded-full opacity-40 blur-[90px] transition-opacity duration-1000 group-hover:opacity-70"
-        style={{ background: a }}
+        className="animate-blob absolute -left-[45%] top-[5%] h-[110%] w-[110%] opacity-50 transition-opacity duration-1000 group-hover:opacity-70"
+        style={{ background: `radial-gradient(closest-side, ${a}, transparent)` }}
       />
       <div
-        className="animate-blob absolute -right-1/4 -bottom-1/4 h-[70%] w-[70%] rounded-full opacity-35 blur-[100px] transition-opacity duration-1000 [animation-delay:-7s] group-hover:opacity-60"
-        style={{ background: b }}
+        className="animate-blob absolute -right-[45%] -bottom-[45%] h-[110%] w-[110%] opacity-45 transition-opacity duration-1000 [animation-delay:-7s] group-hover:opacity-60"
+        style={{ background: `radial-gradient(closest-side, ${b}, transparent)` }}
       />
       <div
         className="absolute inset-0 opacity-[0.12]"

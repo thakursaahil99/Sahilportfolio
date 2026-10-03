@@ -169,7 +169,7 @@ function Collage() {
 export default function AboutHero() {
   return (
     <section className="relative overflow-hidden px-6 pt-32 pb-10 md:px-12 md:pt-40">
-      <div className="pointer-events-none absolute -top-40 right-0 h-[600px] w-[600px] rounded-full bg-red/20 blur-[140px]" />
+      <div className="pointer-events-none absolute -top-40 right-0 h-[600px] w-[600px] bg-[radial-gradient(closest-side,rgb(255_45_32/0.2),transparent)]" />
       <div className="relative grid gap-16 lg:grid-cols-[1fr_1fr] lg:items-center">
         <div>
           <p className="eyebrow mb-6">[ About ]</p>

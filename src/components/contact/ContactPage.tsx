@@ -199,7 +199,7 @@ export default function ContactPage() {
 
   return (
     <section className="relative overflow-hidden px-6 pt-32 md:px-12 md:pt-40">
-      <div className="pointer-events-none absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full bg-red/20 blur-[140px]" />
+      <div className="pointer-events-none absolute -top-40 -left-40 h-[600px] w-[600px] bg-[radial-gradient(closest-side,rgb(255_45_32/0.2),transparent)]" />
 
       {/* ---------- hero ---------- */}
       <div className="relative grid gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-end">
@@ -334,7 +334,7 @@ export default function ContactPage() {
           transition={{ duration: 1, ease: EASE }}
           className="relative space-y-9 overflow-hidden rounded-3xl border border-line bg-panel/60 p-6 md:p-10"
         >
-          <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-red/15 blur-[80px]" />
+          <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 bg-[radial-gradient(closest-side,rgb(255_45_32/0.15),transparent)]" />
           <div className="relative flex items-end justify-between border-b border-line pb-6">
             <div>
               <p className="eyebrow mb-2">[ Project brief ]</p>

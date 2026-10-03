@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { getPerfTier } from "@/lib/perf";
 
 /**
  * WebGL "liquid x-ray" reveal.
@@ -90,19 +91,26 @@ void main() {
     field += t.z * (uRadius * uRadius) / (dot(d, d) + 0.00005);
   }
 
-  // wobble the surface so the edge feels liquid
-  float n = snoise(p * 4.0 + uTime * 0.35) * 0.5 + snoise(p * 11.0 - uTime * 0.6) * 0.25;
-  field *= 1.0 + n * 0.35;
+  // wobble the surface so the edge feels liquid. Most of the frame is far from
+  // the lens, so skip the noise there — this is the bulk of the per-pixel cost.
+  float n = 0.0;
+  if (field > 0.3) {
+    n = snoise(p * 4.0 + uTime * 0.35) * 0.5 + snoise(p * 11.0 - uTime * 0.6) * 0.25;
+    field *= 1.0 + n * 0.35;
+  }
 
   float mask = smoothstep(0.82, 1.08, field);
   float rim = smoothstep(0.55, 0.9, field) * (1.0 - smoothstep(0.95, 1.25, field));
 
   // refraction: push uv along the noise gradient near the rim
-  vec2 grad = vec2(
-    snoise(p * 6.0 + vec2(0.1, 0.0) + uTime * 0.3) - snoise(p * 6.0 - vec2(0.1, 0.0) + uTime * 0.3),
-    snoise(p * 6.0 + vec2(0.0, 0.1) + uTime * 0.3) - snoise(p * 6.0 - vec2(0.0, 0.1) + uTime * 0.3)
-  );
-  vec2 refr = grad * rim * 0.035;
+  vec2 refr = vec2(0.0);
+  if (rim > 0.001) {
+    vec2 grad = vec2(
+      snoise(p * 6.0 + vec2(0.1, 0.0) + uTime * 0.3) - snoise(p * 6.0 - vec2(0.1, 0.0) + uTime * 0.3),
+      snoise(p * 6.0 + vec2(0.0, 0.1) + uTime * 0.3) - snoise(p * 6.0 - vec2(0.0, 0.1) + uTime * 0.3)
+    );
+    refr = grad * rim * 0.035;
+  }
 
   // ---- sample images ----
   float zoom = mix(1.18, 1.04, uIntro) + uScroll * 0.12;
@@ -111,17 +119,19 @@ void main() {
   vec2 topUv = coverUv(uv + par + refr * 0.4, uTopSize, uTopFocus, zoom);
   vec3 top = texture2D(uTop, topUv).rgb;
 
-  vec2 botUv = coverUv(uv + par * 1.6 - refr, uBottomSize, uBottomFocus, zoom * 1.02);
-  float ca = 0.004 + rim * 0.012;
-  vec3 bottom = vec3(
-    texture2D(uBottom, botUv + vec2(ca, 0.0)).r,
-    texture2D(uBottom, botUv).g,
-    texture2D(uBottom, botUv - vec2(ca, 0.0)).b
-  );
-  // slight cool grade inside the lens so it reads as "x-ray"
-  bottom = mix(bottom, bottom * vec3(0.92, 1.0, 1.08), 0.5);
-
-  vec3 col = mix(top, bottom, mask);
+  vec3 col = top;
+  if (mask > 0.001) {
+    vec2 botUv = coverUv(uv + par * 1.6 - refr, uBottomSize, uBottomFocus, zoom * 1.02);
+    float ca = 0.004 + rim * 0.012;
+    vec3 bottom = vec3(
+      texture2D(uBottom, botUv + vec2(ca, 0.0)).r,
+      texture2D(uBottom, botUv).g,
+      texture2D(uBottom, botUv - vec2(ca, 0.0)).b
+    );
+    // slight cool grade inside the lens so it reads as "x-ray"
+    bottom = mix(bottom, bottom * vec3(0.92, 1.0, 1.08), 0.5);
+    col = mix(top, bottom, mask);
+  }
 
   // molten rim glow
   vec3 rimCol = mix(vec3(1.0, 0.18, 0.1), vec3(1.0, 0.72, 0.28), n * 0.5 + 0.5);
@@ -179,6 +189,8 @@ export default function LiquidReveal({
     if (!gl) return; // fallback <Image> underneath stays visible
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // with a mouse the blob follows the cursor; the idle drift is only for touch screens
+    const touch = window.matchMedia("(pointer: coarse)").matches;
 
     // ---------- program ----------
     const compile = (type: number, src: string) => {
@@ -254,13 +266,24 @@ export default function LiquidReveal({
     gl.uniform2f(uni.bottomSize, 1, 1);
 
     // ---------- sizing ----------
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
-      const { width, height } = canvas.getBoundingClientRect();
-      canvas.width = Math.max(1, Math.round(width * dpr));
-      canvas.height = Math.max(1, Math.round(height * dpr));
+    // Render scale: low-power devices start below 1x (the image is soft and grainy
+    // anyway), and any device steps down further if it can't hold ~40fps.
+    const lite = getPerfTier() === "lite";
+    const maxScale = lite ? 0.75 : 1.5;
+    const minScale = 0.5;
+    let scale = Math.min(window.devicePixelRatio || 1, maxScale);
+    let box = { width: 1, height: 1, docTop: 0 };
+
+    const applySize = () => {
+      canvas.width = Math.max(1, Math.round(box.width * scale));
+      canvas.height = Math.max(1, Math.round(box.height * scale));
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.uniform2f(uni.res, canvas.width, canvas.height);
+    };
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      box = { width: rect.width, height: rect.height, docTop: rect.top + window.scrollY };
+      applySize();
     };
     resize();
     const ro = new ResizeObserver(resize);
@@ -312,6 +335,9 @@ export default function LiquidReveal({
     // ---------- loop ----------
     let raf = 0;
     let intro = 0;
+    let slowFrames = 0;
+    let lastDraw = 0;
+    let lastScroll = -1;
     let parX = 0;
     let parY = 0;
     const t0 = performance.now();
@@ -325,15 +351,25 @@ export default function LiquidReveal({
       }
       const time = (now - t0) / 1000;
       // frame-rate independent smoothing: `k` is the per-frame factor at 60fps
-      const dt = Math.min(0.1, (now - last) / 1000);
+      const rawDt = (now - last) / 1000;
+      const dt = Math.min(0.1, rawDt);
       last = now;
+
+      // struggling to keep up? drop the render resolution a notch
+      if (rawDt > 0.025 && rawDt < 0.25) slowFrames++;
+      else slowFrames = Math.max(0, slowFrames - 1);
+      if (slowFrames > 30 && scale > minScale) {
+        scale = Math.max(minScale, scale - 0.15);
+        slowFrames = 0;
+        applySize();
+      }
       const lerp = (k: number) => 1 - Math.pow(1 - k, dt * 60);
 
       let tx = pointer.x;
       let ty = pointer.y;
       let targetStrength = pointer.inside ? (pointer.pressed ? 2.4 : 1) : 0;
 
-      const autopilot = !pointer.inside && !reduced && intro > 0.9;
+      const autopilot = touch && !pointer.inside && !reduced && intro > 0.9;
       if (autopilot) {
         // a slow lissajous drift across the frame invites interaction
         tx = 0.55 + Math.sin(time * 0.43) * 0.22 + Math.sin(time * 0.17) * 0.08;
@@ -375,9 +411,16 @@ export default function LiquidReveal({
       parX += ((pointer.inside ? pointer.x - 0.5 : 0) - parX) * lerp(0.05);
       parY += ((pointer.inside ? pointer.y - 0.5 : 0) - parY) * lerp(0.05);
 
-      const rect = canvas.getBoundingClientRect();
-      const scroll = Math.min(1, Math.max(0, -rect.top / rect.height));
-      const small = rect.width < 768;
+      const scroll = Math.min(1, Math.max(0, (window.scrollY - box.docTop) / box.height));
+      const small = box.width < 768;
+
+      // nothing moving (no pointer, no drift, intro settled, not scrolling)? only the
+      // liquid wobble and grain change, so ~20fps is indistinguishable and far cheaper
+      const idle =
+        !pointer.inside && !autopilot && headStrength < 0.01 && Math.abs((playRef.current ? 1 : 0) - intro) < 0.002 && scroll === lastScroll;
+      lastScroll = scroll;
+      if (idle && now - lastDraw < 50) return;
+      lastDraw = now;
 
       gl.uniform3fv(uni.trail, trail);
       gl.uniform1f(uni.radius, small ? 0.11 : 0.13);

@@ -79,6 +79,40 @@ export const projects: Project[] = [
     featured: true,
   },
   {
+    slug: "glideinbir-vos",
+    title: "Glideinbir VOS",
+    tagline: "Operating system for vehicle service workshops",
+    category: "Platform",
+    summary:
+      "A vehicle operating system for service workshops — bookings, job cards, spare parts, payments and invoices for cars, bikes, scooters and EVs, with customers kept in the loop at every step.",
+    overview: [
+      "Vehicle workshops juggle bookings, repair progress, spare parts and billing across paper, phone calls and spreadsheets. The goal: one platform where every workshop, vehicle and customer lives together.",
+      "I built it as a multi-tenant React app on a versioned REST API. Each workshop registers as its own agency and goes live only after a Super Admin approves it, and role-based access decides what super admins, agency admins, staff and customers can see and do.",
+    ],
+    features: [
+      "Bookings, job cards, spare parts, payments and invoices in one workshop platform",
+      "Multi-tenant agencies with Super Admin approval before going live",
+      "Role-based access for super admins, agency admins, staff and customers",
+      "Customer accounts to book services and follow job-card progress until pickup",
+      "Agency onboarding with business, GSTIN and address details",
+    ],
+    stack: [
+      { label: "Frontend", items: ["React", "Vite", "Tailwind CSS"] },
+      { label: "Platform", items: ["REST API (v1)", "Token auth", "Role-based access"] },
+      { label: "Hosting", items: ["Vercel"] },
+    ],
+    cover: "/projects/glideinbir-vos/cover-0.jpg",
+    gallery: [
+      { src: "/projects/glideinbir-vos/register.jpg", caption: "Customer sign-up", url: "https://glideinbir-vos.vercel.app" },
+      { src: "/projects/glideinbir-vos/agency.jpg", caption: "Agency onboarding — approved by a Super Admin", url: "https://glideinbir-vos.vercel.app" },
+    ],
+    accent: "violet",
+    year: "2026",
+    role: "Full-Stack Developer",
+    link: "https://glideinbir-vos.vercel.app",
+    featured: true,
+  },
+  {
     slug: "glido",
     title: "Glido",
     tagline: "Food, grocery & cab super-app",

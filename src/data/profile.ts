@@ -1,3 +1,5 @@
+import { projects } from "./projects";
+
 // first professional project — every "years of experience" figure derives from this
 const CAREER_START = 2022;
 const YEARS = new Date().getFullYear() - CAREER_START;
@@ -32,7 +34,7 @@ export const profile = {
     { value: YEARS, suffix: "+", label: "Years shipping" },
     { value: 30, suffix: "+", label: "Projects delivered" },
     { value: 35, suffix: "+", label: "Technologies used" },
-    { value: 8, suffix: "", label: "Case studies" },
+    { value: projects.length, suffix: "", label: "Case studies" },
   ],
   experienceYears: `${YEARS}+`,
   // Shown on the résumé. Fill in school / year when ready — empty fields are simply left out.

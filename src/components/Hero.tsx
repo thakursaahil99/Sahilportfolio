@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { profile } from "@/data/profile";
+import { projects } from "@/data/projects";
 import { useIntroDone } from "@/lib/use-intro";
 import { scrollToTarget } from "@/lib/smooth-scroll";
 import LiquidReveal from "./fx/LiquidReveal";
@@ -14,6 +15,12 @@ import TLink from "./transition/TLink";
 const [FIRST_NAME, ...REST] = profile.name.toUpperCase().split(" ");
 const LAST_NAME = REST.join(" ");
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+const FACTS = [
+  { value: String(projects.length), label: "Projects shipped" },
+  { value: profile.experienceYears, label: "Years building" },
+  { value: String(projects.filter((p) => p.link).length), label: "Live on the web" },
+];
 
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -31,7 +38,7 @@ export default function Hero() {
       id="home"
       ref={sectionRef}
       data-cursor="hidden"
-      className="relative h-[100svh] min-h-[620px] w-full overflow-hidden select-none touch-pan-y"
+      className="relative h-[100svh] min-h-[640px] w-full overflow-hidden select-none touch-pan-y"
     >
       {/* static fallback if WebGL is unavailable */}
       <div
@@ -52,11 +59,18 @@ export default function Hero() {
       />
 
       {/* readability */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-background via-background/50 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-background via-background/55 to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-background/90 via-background/50 to-transparent md:h-56" />
       <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-1/2 bg-gradient-to-r from-background/60 to-transparent md:block" />
 
-      <div className="pointer-events-none relative z-10 flex h-full flex-col justify-between px-6 pt-28 pb-8 md:px-12 md:pt-32">
+      {/* corner brackets — a viewfinder around the frame */}
+      <motion.div {...fade(0.9)} aria-hidden="true" className="pointer-events-none absolute inset-4 hidden md:block">
+        {["left-0 top-24 border-l border-t", "right-0 top-24 border-r border-t", "left-0 bottom-0 border-l border-b", "right-0 bottom-0 border-r border-b"].map((c) => (
+          <span key={c} className={`absolute h-5 w-5 border-ink/30 ${c}`} />
+        ))}
+      </motion.div>
+
+      <div className="pointer-events-none relative z-10 flex h-full flex-col justify-between px-6 pt-28 pb-6 md:px-12 md:pt-32 md:pb-8">
         {/* top row */}
         <div className="flex items-start justify-between gap-6">
           <motion.div {...fade(0.5)} className="max-w-xs">
@@ -68,13 +82,19 @@ export default function Hero() {
             />
           </motion.div>
           <motion.div {...fade(0.65)} className="hidden md:block text-right font-mono text-[10px] tracking-[0.25em] uppercase text-muted space-y-1.5">
-            <p className="text-gold">{profile.status}</p>
+            <p className="flex items-center justify-end gap-2 text-gold">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#3ddc84] opacity-70" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#3ddc84]" />
+              </span>
+              {profile.status}
+            </p>
             <p>{profile.location.split(",")[0]}, IN</p>
             <p>{profile.coordinates}</p>
           </motion.div>
         </div>
 
-        {/* name + actions */}
+        {/* name + rail */}
         <div>
           <h1 className="font-display font-black uppercase leading-[0.82] tracking-[-0.04em]">
             <RevealText
@@ -97,8 +117,17 @@ export default function Hero() {
             )}
           </h1>
 
-          <div className="mt-6 flex flex-col-reverse gap-6 md:flex-row md:items-end md:justify-between">
-            <motion.div {...fade(0.9)} className="pointer-events-auto flex items-center gap-4">
+          {/* hairline that draws across, then the rail under it */}
+          <motion.div
+            aria-hidden="true"
+            className="mt-5 h-px origin-left bg-ink/20 md:mt-6"
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: intro ? 1 : 0 }}
+            transition={{ duration: 1.4, ease: [0.76, 0, 0.24, 1], delay: 0.7 }}
+          />
+
+          <div className="mt-5 grid items-end gap-5 md:grid-cols-[auto_1fr_auto] md:gap-10">
+            <motion.div {...fade(0.9)} className="pointer-events-auto flex items-center gap-3">
               <Magnetic>
                 <button
                   onClick={() => scrollToTarget("#work")}
@@ -118,14 +147,24 @@ export default function Hero() {
               </Magnetic>
             </motion.div>
 
-            <motion.div {...fade(1)} className="flex items-center gap-3">
+            {/* quick facts */}
+            <motion.dl {...fade(1)} className="hidden justify-center gap-10 lg:flex xl:gap-14">
+              {FACTS.map((f) => (
+                <div key={f.label} className="flex items-baseline gap-3">
+                  <dd className="font-display text-2xl font-black tracking-tight xl:text-3xl">{f.value}</dd>
+                  <dt className="font-mono text-[9px] tracking-[0.25em] uppercase text-ink/60">{f.label}</dt>
+                </div>
+              ))}
+            </motion.dl>
+
+            <motion.div {...fade(1.1)} className="flex items-center gap-3 md:justify-end">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red opacity-70" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-red" />
               </span>
               <span className="font-mono text-[10px] tracking-[0.25em] uppercase text-ink/80">
                 {active ? (
-                  "Identity exposed — hold to expand"
+                  "That's me under the armour — hold to expand"
                 ) : (
                   <>
                     <span className="hidden md:inline">Move your cursor to unmask</span>

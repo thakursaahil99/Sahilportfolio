@@ -5,6 +5,8 @@ import BaseCamp from "@/components/about/BaseCamp";
 import Arsenal from "@/components/Arsenal";
 import Experience from "@/components/Experience";
 import Principles from "@/components/about/Principles";
+import Shipped from "@/components/about/Shipped";
+import FactSheet from "@/components/about/FactSheet";
 import ContactCTA from "@/components/ContactCTA";
 
 export const metadata: Metadata = {
@@ -21,8 +23,10 @@ export default function AboutPage() {
       <BaseCamp />
       <Arsenal />
       <Experience index="04" />
-      <Principles />
-      <ContactCTA index="06" />
+      <Shipped index="05" />
+      <Principles index="06" />
+      <FactSheet index="07" />
+      <ContactCTA index="08" />
     </main>
   );
 }

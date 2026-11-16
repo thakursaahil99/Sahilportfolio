@@ -17,7 +17,7 @@ export default function ResumeToolbar() {
     >
       <div>
         <p className="eyebrow">[ Résumé ]</p>
-        <p className="mt-2 text-sm text-ink/60">One page, ATS-friendly. Save it as PDF from the print dialog.</p>
+        <p className="mt-2 text-sm text-ink/60">The full journey on two pages, ATS-friendly. Save it as PDF from the print dialog.</p>
       </div>
       <div className="flex gap-3">
         <button

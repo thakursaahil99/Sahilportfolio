@@ -9,7 +9,7 @@ import RevealText from "./fx/RevealText";
 import ProjectArt from "./work/ProjectArt";
 import TLink from "./transition/TLink";
 
-type Service = {
+export type Service = {
   title: string;
   desc: string;
   tags: string[];
@@ -20,14 +20,14 @@ type Service = {
   example: { label: string; slug: string };
 };
 
-const SERVICES: Service[] = [
+export const SERVICES: Service[] = [
   {
     title: "Web apps & platforms",
     desc: "Booking engines, super-apps and dashboards — from the database schema and API to a pixel-perfect, real-time UI.",
     tags: ["Next.js", "React", "Node.js", "Express", "NestJS", "MongoDB", "PostgreSQL"],
     accent: "orange",
     glyph: "{ }",
-    shots: ["/projects/glido/cover-1.jpg", "/projects/glide-in-bir.jpg"],
+    shots: ["/projects/sahu-music/cover.jpg", "/projects/glide-in-bir.jpg"],
     example: { label: "Glide in Bir", slug: "glide-in-bir" },
   },
   {
@@ -36,8 +36,8 @@ const SERVICES: Service[] = [
     tags: ["Magento 2", "Laravel", "GraphQL", "Razorpay", "Multi-vendor"],
     accent: "green",
     glyph: "₹",
-    shots: ["/projects/glido/cover-0.jpg", "/projects/pahadibhai.jpg"],
-    example: { label: "Pahadibhai", slug: "pahadibhai" },
+    shots: ["/projects/glideinbir-kart/cover.jpg", "/projects/quickcart/cover.jpg"],
+    example: { label: "QuickCart", slug: "quickcart" },
   },
   {
     title: "AI integrations",
@@ -45,7 +45,7 @@ const SERVICES: Service[] = [
     tags: ["LLM APIs", "Ollama", "Qdrant RAG", "Vapi Voice", "FastAPI"],
     accent: "violet",
     glyph: "✦",
-    shots: ["/projects/sahucodex/cover-1.jpg", "/projects/sahucodex/cover-0.jpg"],
+    shots: ["/projects/glideup/cover.jpg", "/projects/sahucodex/cover-0.jpg"],
     example: { label: "SahuCodeX", slug: "sahucodex" },
   },
   {
@@ -54,8 +54,8 @@ const SERVICES: Service[] = [
     tags: ["WebGL", "Three.js", "GSAP", "Lenis", "Framer Motion"],
     accent: "red",
     glyph: "◐",
-    shots: ["/projects/redbean-hospitality/3d-0.jpg", "/projects/bobby-singh/cover-0.jpg"],
-    example: { label: "Bobby Singh", slug: "bobby-singh" },
+    shots: ["/projects/bobby-singh/cover-0.jpg", "/projects/bir-paragliding/cover.jpg"],
+    example: { label: "Bir Paragliding", slug: "bir-paragliding" },
   },
 ];
 

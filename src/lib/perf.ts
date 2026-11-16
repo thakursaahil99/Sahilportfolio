@@ -1,5 +1,7 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
+
 /**
  * Rough device tier. "lite" turns off the purely decorative, GPU-hungry effects
  * (animated grain, molten text shimmer, drifting blurred blobs, backdrop blur)
@@ -23,7 +25,24 @@ export function getPerfTier() {
   return tier!;
 }
 
+const PERF_EVENT = "portfolio:perf";
+
 export function setPerfTier(next: "lite" | "full") {
   tier = next;
   document.documentElement.dataset.perf = next;
+  window.dispatchEvent(new Event(PERF_EVENT));
+}
+
+function subscribe(cb: () => void) {
+  window.addEventListener(PERF_EVENT, cb);
+  return () => window.removeEventListener(PERF_EVENT, cb);
+}
+
+/** true on low-power devices — components use it to skip scroll-linked parallax and other per-frame work. */
+export function usePerfLite() {
+  return useSyncExternalStore(
+    subscribe,
+    () => document.documentElement.dataset.perf === "lite",
+    () => false
+  );
 }

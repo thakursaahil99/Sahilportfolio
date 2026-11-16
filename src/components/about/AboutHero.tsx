@@ -9,11 +9,6 @@ import SpotlightCard from "../fx/SpotlightCard";
 import LocalClock from "../fx/LocalClock";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-const INITIALS = profile.name
-  .split(" ")
-  .map((w) => w[0])
-  .join("");
-
 /** Pseudo-random but stable barcode widths derived from the name. */
 const BARS = Array.from(profile.name + profile.role, (c, i) => ((c.charCodeAt(0) * (i + 3)) % 4) + 1);
 
@@ -45,8 +40,8 @@ function IdCard() {
           <svg viewBox="0 0 100 100" className="absolute inset-0 animate-spin-slow">
             <circle cx="50" cy="50" r="47" fill="none" stroke="#ffb547" strokeOpacity="0.6" strokeWidth="1.5" strokeDasharray="3 5" />
           </svg>
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-red to-gold font-display text-lg font-black text-background">
-            {INITIALS}
+          <div className="relative h-12 w-12 overflow-hidden rounded-full bg-gradient-to-br from-red to-gold">
+            <Image src={profile.avatar} alt="" fill sizes="48px" className="object-cover" />
           </div>
         </div>
         <div className="min-w-0">
@@ -125,11 +120,11 @@ function Collage() {
             transition={{ duration: 2, delay: 0.3, ease: EASE }}
             className="absolute inset-0"
           >
-            <Image src="/about/mountains.jpg" alt="Forested ridge above Bir Billing" fill sizes="(min-width: 1024px) 480px, 86vw" loading="eager" className="object-cover" />
+            <Image src={profile.portrait} alt={`${profile.name} — ${profile.role}`} fill sizes="(min-width: 1024px) 480px, 86vw" loading="eager" className="object-cover object-top" />
           </motion.div>
           <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
           <p className="absolute right-5 top-5 rounded-full bg-background/50 px-3 py-1 backdrop-blur-md font-mono text-[10px] tracking-[0.25em] uppercase text-ink/90">
-            Bir Billing · Himachal Pradesh
+            {profile.status}
           </p>
         </motion.div>
       </motion.div>
@@ -143,10 +138,10 @@ function Collage() {
           className="w-[150px] bg-ink p-2 pb-8 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)] md:w-[180px]"
         >
           <div className="relative aspect-square overflow-hidden">
-            <Image src="/about/glide-red.jpg" alt="Paraglider over the Himalaya" fill sizes="180px" className="object-cover" />
+            <Image src="/about/mountains.jpg" alt="Forested ridge above Bir Billing" fill sizes="180px" className="object-cover" />
           </div>
           <p className="absolute bottom-2 left-3 font-mono text-[9px] tracking-[0.15em] uppercase text-background">
-            The view from base ✦
+            Bir Billing · base ✦
           </p>
         </motion.div>
       </motion.div>

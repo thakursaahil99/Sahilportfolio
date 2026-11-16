@@ -1,108 +1,96 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { getLenis } from "@/lib/smooth-scroll";
+import { getPerfTier } from "@/lib/perf";
 import { getProject } from "@/data/projects";
 import { NAV } from "@/data/nav";
 
-const EASE = [0.76, 0, 0.24, 1] as const;
-const OUT = [0.16, 1, 0.3, 1] as const;
-const GREETINGS = ["Hello", "नमस्ते", "Hola", "Bonjour", "Ciao", "こんにちは", "Welcome"];
+/**
+ * Page transitions, played on every client navigation (links and browser
+ * back/forward): a molten layer and a dark panel slide up over the page, the
+ * next page's title rises on the panel, then both carry on upward and uncover
+ * the new page.
+ *
+ * Kept deliberately light so it never stutters on phones or older laptops:
+ * - the motion is two CSS transforms (see `.pt-*` in globals.css) — no
+ *   JavaScript runs per frame and nothing re-renders while it plays;
+ * - React state changes three times per navigation (in → out → idle);
+ * - the context value is stable, so the links on the page don't re-render;
+ * - low-power devices get shorter timings and a single layer.
+ */
 
-const COVER_MS = 650; // curtains close
-const MIN_HOLD_MS = 1100; // title on screen at least this long, so the intro always reads
-const REVEAL_MS = 1100; // curtains open
-
-type Phase = "idle" | "cover" | "hold" | "reveal";
+type Phase = "idle" | "in" | "out";
+type Info = { title: string; kicker: string; label: string; path: string; thumb?: string };
 type Ctx = { navigate: (href: string) => void };
 const TransitionContext = createContext<Ctx>({ navigate: () => {} });
 export const usePageTransition = () => useContext(TransitionContext);
 
+const FULL = { cover: 600, read: 820, reveal: 700 }; // ms: layers up · title readable · layers away
+const LITE = { cover: 420, read: 620, reveal: 500 };
+const CSS_IN = { full: 520, lite: 350 }; // transform durations behind `cover` (the panel starts 70ms late)
+const CSS_OUT = { full: 620, lite: 430 };
+
 const pathOf = (href: string) => href.split(/[?#]/)[0] || "/";
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const pad = (n: number) => String(n).padStart(2, "0");
 
-function describe(path: string) {
+function describe(path: string): Info {
   const i = NAV.findIndex((n) => n.href === path);
-  if (i >= 0) return { title: NAV[i].label, kicker: `(${String(i + 1).padStart(2, "0")}) / ${String(NAV.length).padStart(2, "0")}` };
-  if (path.startsWith("/work/")) return { title: getProject(path.slice(6))?.title ?? "Work", kicker: "Case study" };
+  if (i >= 0) return { title: NAV[i].label, kicker: `${pad(i + 1)} / ${pad(NAV.length)}`, label: "Now entering", path };
+  if (path.startsWith("/work/")) {
+    const project = getProject(path.slice(6));
+    return { title: project?.title ?? "Work", kicker: project?.category ?? "Case study", label: "Case study", path, thumb: project?.cover };
+  }
   const seg = path.slice(1);
-  return { title: seg.charAt(0).toUpperCase() + seg.slice(1) || "Home", kicker: "Loading" };
+  return { title: seg.charAt(0).toUpperCase() + seg.slice(1) || "Home", kicker: "Loading", label: "Now entering", path };
 }
 
-/** Big title whose letters rise in one after another and leave upward. */
-function Title({ text }: { text: string }) {
-  const letters = text.toUpperCase().split("");
-  // long project names get a smaller size so they stay on one line
-  const size = text.length > 12 ? "text-[11vw] md:text-[8vw]" : "text-[17vw] md:text-[12vw]";
-  return (
-    <span aria-hidden="true" className={`flex overflow-hidden pb-[0.06em] font-display font-black leading-[0.9] tracking-[-0.05em] ${size}`}>
-      {letters.map((ch, i) => (
-        <motion.span
-          key={i}
-          className="inline-block"
-          initial={{ y: "110%", rotate: 6 }}
-          animate={{ y: "0%", rotate: 0, transition: { duration: 0.8, ease: OUT, delay: 0.05 + i * 0.035 } }}
-          exit={{ y: "-110%", rotate: -4, transition: { duration: 0.5, ease: EASE, delay: i * 0.02 } }}
-        >
-          {ch === " " ? " " : ch}
-        </motion.span>
-      ))}
-    </span>
-  );
+/** Font size that keeps the title on one line: Unbounded Black is ~0.8em per glyph at this tracking. */
+function titleSize(text: string) {
+  const fit = 80 / (Math.max(1, text.length) * 0.8);
+  return { "--fs-m": `${Math.min(17, fit).toFixed(2)}vw`, "--fs-d": `${Math.min(12, fit).toFixed(2)}vw` } as CSSProperties;
 }
 
-/**
- * Intro-style page transitions, played on every client navigation (links and
- * browser back/forward): curtains close, a greeting flickers, the page title
- * rises with a progress counter, then a molten seam flashes and the curtains part.
- */
 export default function PageTransition({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [phase, setPhase] = useState<Phase>("idle");
-  const [info, setInfo] = useState({ title: "", kicker: "" });
-  const [greet, setGreet] = useState(0);
-  const [count, setCount] = useState(0);
-  // back/forward: the new page is already on screen, so the curtains must snap shut
+  const [info, setInfo] = useState<Info>({ title: "", kicker: "", label: "", path: "" });
+  // back/forward: the new page is already on screen, so the layers must snap shut
   const [instant, setInstant] = useState(false);
+  const [lite, setLite] = useState(false);
   const busy = useRef(false);
   const lastPath = useRef(pathname);
   const arrival = useRef<{ path: string; resolve: () => void } | null>(null);
 
-  // greeting flicker + counter while the overlay is up
-  useEffect(() => {
-    if (phase !== "cover" && phase !== "hold") return;
-    const start = performance.now();
-    const id = setInterval(() => {
-      const t = performance.now() - start;
-      setGreet(Math.min(GREETINGS.length - 1, Math.floor(t / 110)));
-      setCount((c) => Math.min(99, Math.max(c, Math.round((1 - Math.exp(-t / 450)) * 99))));
-    }, 40);
-    return () => clearInterval(id);
-  }, [phase]);
+  /** Timings for this device, read when a transition starts. */
+  const timings = () => {
+    const isLite = getPerfTier() === "lite";
+    setLite(isLite);
+    return isLite ? LITE : FULL;
+  };
 
   const settle = async () => {
     const lenis = getLenis();
     if (lenis) lenis.scrollTo(0, { immediate: true, force: true });
     window.scrollTo(0, 0);
-    await wait(120);
+    await wait(60);
     ScrollTrigger.refresh();
   };
 
-  const reveal = async () => {
-    setCount(100);
-    await wait(180);
-    setPhase("reveal");
-    await wait(REVEAL_MS);
+  const reveal = async (ms: number) => {
+    setPhase("out");
+    await wait(ms);
     setPhase("idle");
     busy.current = false;
   };
 
   // resolve a pending navigation once the new route has rendered; a path change
-  // we didn't start (browser back/forward) still gets the intro, played over it
+  // we didn't start (browser back/forward) still gets the title card, played over it
   useEffect(() => {
     if (pathname === lastPath.current) return;
     lastPath.current = pathname;
@@ -113,15 +101,15 @@ export default function PageTransition({ children }: { children: ReactNode }) {
     }
     if (busy.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     busy.current = true;
-    setInfo(describe(pathname));
-    setGreet(0);
-    setCount(0);
-    setInstant(true);
-    setPhase("hold");
     void (async () => {
+      await wait(0); // let the route change commit before we draw over it
+      const t = timings();
+      setInfo(describe(pathname));
+      setInstant(true);
+      setPhase("in");
       await settle();
-      await wait(MIN_HOLD_MS);
-      await reveal();
+      await wait(t.read - 200);
+      await reveal(t.reveal);
     })();
   }, [pathname]);
 
@@ -130,6 +118,8 @@ export default function PageTransition({ children }: { children: ReactNode }) {
       const path = pathOf(href);
       if (busy.current) return;
       if (path === pathname) {
+        // same page with a different query (e.g. /contact?type=…) still needs the URL updated
+        if (href !== path) router.replace(href, { scroll: false });
         const lenis = getLenis();
         if (lenis) lenis.scrollTo(0, { duration: 1.2 });
         else window.scrollTo({ top: 0, behavior: "smooth" });
@@ -141,108 +131,77 @@ export default function PageTransition({ children }: { children: ReactNode }) {
       }
 
       busy.current = true;
+      const t = timings();
       setInfo(describe(path));
-      setGreet(0);
-      setCount(0);
       setInstant(false);
-      setPhase("cover");
+      setPhase("in");
       const shownAt = performance.now();
-      await wait(COVER_MS);
-      setPhase("hold");
+      await wait(t.cover);
 
-      // swap the route underneath
+      // swap the route underneath, hidden by the panel
       const arrived = new Promise<void>((resolve) => (arrival.current = { path, resolve }));
       router.push(href, { scroll: false });
       await Promise.race([arrived, wait(5000)]);
       await settle();
-      await wait(Math.max(0, COVER_MS + MIN_HOLD_MS - (performance.now() - shownAt)));
-      await reveal();
+      // hold only as long as the title needs to be read
+      await wait(Math.max(0, t.read - (performance.now() - shownAt)));
+      await reveal(t.reveal);
     },
     [pathname, router]
   );
 
-  const closed = phase === "cover" || phase === "hold";
-  const curtain = (from: "top" | "bottom", color: string, delay: number) => (
-    <motion.div
-      className={`absolute inset-x-0 h-1/2 ${from === "top" ? "top-0" : "bottom-0"} ${color}`}
-      initial={false}
-      animate={{ y: closed ? "0%" : from === "top" ? "-100%" : "100%" }}
-      transition={
-        closed && instant
-          ? { duration: 0 }
-          : { duration: closed ? 0.6 : 0.95, ease: EASE, delay: closed ? delay : 0.12 + (0.1 - delay) }
-      }
-    />
-  );
+  // stable value: a transition must not re-render every link on the page
+  const ctx = useMemo(() => ({ navigate }), [navigate]);
+
+  const vars = {
+    "--pt-in": `${lite ? CSS_IN.lite : CSS_IN.full}ms`,
+    "--pt-out": `${lite ? CSS_OUT.lite : CSS_OUT.full}ms`,
+  } as CSSProperties;
 
   return (
-    <TransitionContext.Provider value={{ navigate }}>
+    <TransitionContext.Provider value={ctx}>
       {children}
-      <div
-        aria-hidden="true"
-        className={`fixed inset-0 z-[140] overflow-hidden ${phase === "idle" ? "pointer-events-none invisible" : "pointer-events-auto"}`}
-      >
-        {/* red leads, dark follows — a flash of colour on the way in and out */}
-        {curtain("top", "bg-red", 0)}
-        {curtain("bottom", "bg-red", 0)}
-        {curtain("top", "bg-background", 0.08)}
-        {curtain("bottom", "bg-background", 0.08)}
+      <div aria-hidden="true" className="pt-root" data-phase={phase} data-instant={instant} style={vars}>
+        {/* molten layer: first in, last out */}
+        <div className="pt-layer pt-accent bg-gradient-to-r from-red via-gold to-red" />
 
-        {/* molten seam where the halves meet */}
-        <motion.div
-          className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-red to-transparent"
-          initial={false}
-          animate={phase === "reveal" ? { scaleX: [0, 1, 1], opacity: [0, 1, 0] } : { scaleX: 0, opacity: 0 }}
-          transition={{ duration: 0.7, ease: OUT, times: [0, 0.4, 1] }}
-        />
+        <div className="pt-layer pt-panel flex flex-col justify-between bg-background px-6 py-8 md:px-12 md:py-10">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red to-transparent" />
 
-        <AnimatePresence>
-          {phase === "hold" && (
-            <motion.div
-              key={info.title}
-              className="absolute inset-0 flex flex-col justify-between px-6 py-8 md:px-12 md:py-10"
-              exit={{ opacity: 0, transition: { duration: 0.35, delay: 0.25 } }}
-            >
-              <div className="flex justify-between font-mono text-[10px] tracking-[0.3em] uppercase text-muted">
-                <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  {info.kicker}
-                </motion.span>
-                <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-br from-gold to-red" />
-                  {GREETINGS[greet]}
-                </motion.span>
-              </div>
+          <div className="pt-fade flex justify-between font-mono text-[10px] tracking-[0.3em] uppercase text-muted">
+            <span className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-br from-gold to-red" />
+              {info.kicker}
+            </span>
+            <span className="max-w-[55%] truncate normal-case tracking-[0.15em]">{info.path}</span>
+          </div>
 
-              <div className="flex flex-col items-center gap-5">
-                <motion.span
-                  className="font-mono text-[11px] tracking-[0.4em] uppercase text-ink/60"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0, transition: { duration: 0.6, ease: OUT } }}
-                  exit={{ opacity: 0, y: -12, transition: { duration: 0.3 } }}
-                >
-                  {info.kicker === "Case study" ? "Case study" : "Now entering"}
-                </motion.span>
-                <Title text={info.title} />
-                <motion.span
-                  className="h-px w-32 origin-center bg-gradient-to-r from-red to-gold"
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1, transition: { duration: 0.8, ease: OUT, delay: 0.3 } }}
-                  exit={{ scaleX: 0, transition: { duration: 0.3 } }}
-                />
-              </div>
+          <div className="flex flex-col items-center gap-5">
+            {info.thumb && (
+              <span className="block overflow-hidden rounded-xl">
+                <span className="pt-rise relative block aspect-[16/10] w-40 -rotate-2 overflow-hidden rounded-xl border border-ink/15 md:w-56">
+                  <Image src={info.thumb} alt="" fill sizes="224px" className="object-cover object-top" />
+                </span>
+              </span>
+            )}
+            <span className="pt-fade font-mono text-[11px] tracking-[0.4em] uppercase text-ink/60">{info.label}</span>
+            {/* the title rises out of a mask as one piece — one transform, however long the name */}
+            <span className="block overflow-hidden pb-[0.06em]">
+              <span
+                style={titleSize(info.title)}
+                className="pt-rise block whitespace-nowrap font-display text-[length:var(--fs-m)] font-black uppercase leading-[0.9] tracking-[-0.05em] md:text-[length:var(--fs-d)]"
+              >
+                {info.title}
+              </span>
+            </span>
+            <span className="pt-fade h-px w-32 bg-gradient-to-r from-red to-gold" />
+          </div>
 
-              <div>
-                <div className="mb-3 flex justify-between font-mono text-[10px] tracking-[0.3em] uppercase text-muted">
-                  <span>Sahil Thakur — Portfolio</span>
-                  <span className="tabular-nums text-ink">{String(count).padStart(3, "0")}</span>
-                </div>
-                <div className="h-px w-full bg-line">
-                  <div className="h-full bg-gradient-to-r from-red to-gold transition-[width] duration-150" style={{ width: `${count}%` }} />
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+          <div className="pt-fade flex justify-between font-mono text-[10px] tracking-[0.3em] uppercase text-muted">
+            <span>Sahil Thakur — Portfolio</span>
+            <span className="text-ink/70">{new Date().getFullYear()}</span>
+          </div>
+        </div>
       </div>
     </TransitionContext.Provider>
   );

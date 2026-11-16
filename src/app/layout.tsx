@@ -9,6 +9,7 @@ import ScrollProgress from "@/components/ScrollProgress";
 import PageTransition from "@/components/transition/PageTransition";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import CommandMenu from "@/components/CommandMenu";
 import { profile } from "@/data/profile";
 import { SITE_URL } from "@/lib/site";
 
@@ -80,6 +81,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             {children}
           </div>
           <Footer />
+          <CommandMenu />
         </PageTransition>
         {/* page views → Vercel dashboard (enable Analytics on the project once) */}
         <Analytics />

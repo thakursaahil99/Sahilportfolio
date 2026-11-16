@@ -1,30 +1,44 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
 import { getLenis } from "@/lib/smooth-scroll";
 import { markIntroDone } from "@/lib/use-intro";
 import { getPerfTier, setPerfTier } from "@/lib/perf";
 import { profile } from "@/data/profile";
 
-/** Intro: quick multilingual greeting → name reveal → curtain splits open. */
+/**
+ * Intro: portrait inside a ring that draws as the page loads, the name rising
+ * underneath, a large counter — then the whole slab lifts off the page with a
+ * curved bottom edge and a molten layer trailing behind it.
+ *
+ * Built to stay smooth on phones and low-power laptops: React renders it twice
+ * (once to show, once to leave). The counter, bar and ring are written straight
+ * to the DOM from one requestAnimationFrame loop, and everything that moves is
+ * a CSS transform or opacity (see `.intro-*` in globals.css).
+ */
 
-const GREETINGS = ["Hello", "नमस्ते", "Hola", "Bonjour", "Ciao", "こんにちは", "Welcome"];
-const GREET_FIRST = 380; // first word lingers a little
-const GREET_STEP = 150;
-const GREET_END = 1500; // "Welcome" holds until the name comes in
-const DURATION = 3000;
-const EASE = [0.76, 0, 0.24, 1] as const;
-const OUT = [0.16, 1, 0.3, 1] as const;
-const FADE_AT = DURATION - 450; // name fades, then the seam flashes on a clean screen
-const SEAM_AT = DURATION - 250;
+const FULL_MS = 2300; // first visit in this tab
+const SHORT_MS = 800; // later loads in the same tab: no need to sit through it again
+const LEAVE_MS = 1150; // slab + trailing layer have cleared the screen
+const RING = 2 * Math.PI * 46;
+const SEEN_KEY = "portfolio:intro-seen";
+const OUT = "cubic-bezier(0.16, 1, 0.3, 1)";
 
 const [FIRST, ...REST] = profile.name.toUpperCase().split(" ");
 const LAST = REST.join(" ");
 
-function greetingIndex(ms: number) {
-  if (ms < GREET_FIRST) return 0;
-  return Math.min(GREETINGS.length - 1, 1 + Math.floor((ms - GREET_FIRST) / GREET_STEP));
+// read once per page load (effects can run twice in development)
+let firstVisit: boolean | null = null;
+function isFirstVisit() {
+  if (firstVisit !== null) return firstVisit;
+  try {
+    firstVisit = sessionStorage.getItem(SEEN_KEY) !== "1";
+    sessionStorage.setItem(SEEN_KEY, "1");
+  } catch {
+    firstVisit = true; // storage blocked: just play the full intro
+  }
+  return firstVisit;
 }
 
 /** Blend two #rrggbb colours. */
@@ -34,51 +48,44 @@ function mix(a: string, b: string, t: number) {
   return `rgb(${c.join(",")})`;
 }
 
-/**
- * Word whose letters slide up one after another. `gradient` colours each letter
- * along a gold→red ramp — background-clip text can't follow per-letter transforms.
- */
-function Letters({
-  text,
-  delay = 0,
-  gradient = false,
-  className = "",
-}: {
-  text: string;
-  delay?: number;
-  gradient?: boolean;
-  className?: string;
-}) {
+/** Word whose letters rise out of a mask one after another (CSS animation, no JS per frame). */
+function Letters({ text, delay = 0, gradient = false }: { text: string; delay?: number; gradient?: boolean }) {
   const n = Math.max(1, text.length - 1);
   return (
-    <span className={`flex overflow-hidden pb-[0.06em] ${className}`} aria-hidden="true">
+    <span className="flex overflow-hidden pb-[0.06em]" aria-hidden="true">
       {text.split("").map((ch, i) => (
-        <motion.span
+        <span
           key={i}
           className="inline-block"
-          style={gradient ? { color: mix("#ffb547", "#ff2d20", i / n) } : undefined}
-          initial={{ y: "110%" }}
-          animate={{ y: 0 }}
-          transition={{ duration: 0.8, ease: OUT, delay: delay + i * 0.04 }}
+          style={{
+            color: gradient ? mix("#ffb547", "#ff2d20", i / n) : undefined,
+            animation: `intro-rise 800ms ${OUT} ${delay + i * 40}ms both`,
+          }}
         >
           {ch === " " ? " " : ch}
-        </motion.span>
+        </span>
       ))}
     </span>
   );
 }
 
 export default function Preloader() {
-  const [elapsed, setElapsed] = useState(0);
-  const [done, setDone] = useState(false);
+  const [state, setState] = useState<"run" | "exit" | "gone">("run");
+  const countRef = useRef<HTMLSpanElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const ringRef = useRef<SVGCircleElement>(null);
   const skipRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     getPerfTier();
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const total = isFirstVisit() ? FULL_MS : SHORT_MS;
     document.documentElement.style.overflow = "hidden";
+    getLenis()?.stop();
+
     const start = performance.now();
     let raf = 0;
-    let timer: ReturnType<typeof setTimeout>;
+    let leaveTimer: ReturnType<typeof setTimeout>;
     let last = start;
     let frames = 0;
     let slow = 0;
@@ -88,8 +95,9 @@ export default function Preloader() {
       if (finished) return;
       finished = true;
       cancelAnimationFrame(raf);
-      setDone(true);
-      markIntroDone(); // hero starts animating while the curtain opens
+      setState("exit");
+      markIntroDone(); // the hero starts animating while the slab lifts
+      leaveTimer = setTimeout(() => setState("gone"), reduced ? 0 : LEAVE_MS);
     };
     skipRef.current = finish;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && finish();
@@ -98,135 +106,132 @@ export default function Preloader() {
     const tick = (now: number) => {
       // rAF timestamps can predate `start` slightly, so clamp at 0
       const ms = Math.max(0, now - start);
-      setElapsed(Math.min(ms, DURATION));
+      const t = Math.min(1, ms / total);
+      // quick start, brief stall near the end — reads like real loading
+      const p = t < 0.8 ? Math.pow(t / 0.8, 0.8) * 0.82 : 0.82 + ((t - 0.8) / 0.2) * 0.18;
+
+      if (countRef.current) countRef.current.textContent = String(Math.round(p * 100)).padStart(2, "0");
+      if (barRef.current) barRef.current.style.transform = `scaleX(${p})`;
+      if (ringRef.current) ringRef.current.style.strokeDashoffset = String(RING * (1 - p));
 
       // the intro doubles as a benchmark: a device that drops frames here gets the lite effects
-      if (ms > 300 && ms < 2400) {
+      if (ms > 300 && ms < 1900) {
         frames++;
         if (now - last > 28) slow++;
       }
       last = now;
 
-      if (ms < DURATION) raf = requestAnimationFrame(tick);
+      if (t < 1) raf = requestAnimationFrame(tick);
       else {
         if (frames > 20 && slow / frames > 0.35) setPerfTier("lite");
-        timer = setTimeout(finish, 150);
+        finish();
       }
     };
     // reduced motion: no intro at all
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) timer = setTimeout(finish, 0);
+    if (reduced) leaveTimer = setTimeout(finish, 0);
     else raf = requestAnimationFrame(tick);
-    getLenis()?.stop();
 
     return () => {
       cancelAnimationFrame(raf);
-      clearTimeout(timer);
+      clearTimeout(leaveTimer);
       window.removeEventListener("keydown", onKey);
     };
   }, []);
 
-  const phase = elapsed < GREET_END ? "greet" : "name";
-  const t = elapsed / DURATION;
-  // quick start, brief stall near the end — feels like real loading
-  const count = Math.round((t < 0.8 ? Math.pow(t / 0.8, 0.8) * 0.82 : 0.82 + ((t - 0.8) / 0.2) * 0.18) * 100);
-  const word = GREETINGS[greetingIndex(elapsed)];
-  const curtain = { duration: 1.1, ease: EASE, delay: 0.15 };
+  // hand the page back once the overlay is gone
+  useEffect(() => {
+    if (state !== "gone") return;
+    document.documentElement.style.overflow = "";
+    getLenis()?.start();
+  }, [state]);
+
+  if (state === "gone") return null;
 
   return (
-    <AnimatePresence
-      onExitComplete={() => {
-        document.documentElement.style.overflow = "";
-        getLenis()?.start();
-      }}
-    >
-      {!done && (
-        <motion.div
-          key="preloader"
-          className="fixed inset-0 z-[150]"
-          exit={{ opacity: 1 }}
-          transition={{ duration: 1.3 }}
-          aria-label="Loading"
-          role="status"
-        >
-          {/* curtain halves */}
-          <motion.div className="absolute inset-x-0 top-0 h-1/2 bg-background" exit={{ y: "-100%" }} transition={curtain} />
-          <motion.div className="absolute inset-x-0 bottom-0 h-1/2 bg-background" exit={{ y: "100%" }} transition={curtain} />
+    <div className="intro fixed inset-0 z-[150] overflow-hidden" data-state={state} aria-label="Loading" role="status">
+      {/* molten layer that trails the slab on the way out */}
+      <div className="intro-layer intro-accent bg-gradient-to-r from-red via-gold to-red" />
 
-          {/* molten seam that flashes across right before the split */}
-          <motion.div
-            className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 origin-center bg-gradient-to-r from-transparent via-red to-transparent"
-            initial={{ scaleX: 0, opacity: 0 }}
-            animate={elapsed > SEAM_AT ? { scaleX: 1, opacity: 1 } : { scaleX: 0, opacity: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.45, ease: OUT }}
-          />
-
-          <motion.div
-            className="relative flex h-full flex-col justify-between px-6 py-8 md:px-12 md:py-10"
-            exit={{ opacity: 0, y: -24 }}
-            transition={{ duration: 0.45, ease: EASE }}
-          >
-            <div className="flex items-center justify-between font-mono text-[10px] tracking-[0.3em] uppercase text-muted">
-              <span>Portfolio ©{new Date().getFullYear()}</span>
-              <button
-                onClick={() => skipRef.current()}
-                className="pointer-events-auto rounded-full border border-line px-3 py-1.5 text-ink/70 transition-colors hover:border-ink hover:text-ink sm:order-last"
-              >
-                Skip intro →
-              </button>
-              <span className="hidden sm:block">{profile.coordinates}</span>
-            </div>
-
-            {/* greeting and name share one grid cell so they cross over with no gap */}
-            <motion.div
-              className="grid flex-1 place-items-center [&>*]:[grid-area:1/1]"
-              animate={elapsed > FADE_AT ? { opacity: 0, y: -24 } : { opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: EASE }}
+      <div className="intro-layer bg-background">
+        <div className="intro-content flex h-[100svh] flex-col justify-between px-6 py-7 md:px-12 md:py-9">
+          {/* top bar */}
+          <div className="flex items-center justify-between font-mono text-[10px] tracking-[0.3em] uppercase text-muted">
+            <span className="flex items-center gap-3">
+              <span className="h-1.5 w-1.5 rounded-full bg-red" />
+              Portfolio ©{new Date().getFullYear()}
+            </span>
+            <span className="hidden sm:block">{profile.coordinates}</span>
+            <button
+              onClick={() => skipRef.current()}
+              className="rounded-full border border-line px-3 py-1.5 uppercase text-ink/70 transition-colors hover:border-ink hover:text-ink"
             >
-              <AnimatePresence initial={false}>
-                {phase === "greet" ? (
-                  <motion.p
-                    key="greet"
-                    className="flex items-center gap-4 font-display text-4xl font-semibold text-ink md:text-6xl"
-                    exit={{ opacity: 0, y: -40, transition: { duration: 0.4, ease: EASE } }}
-                  >
-                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-gold to-red md:h-3.5 md:w-3.5" />
-                    <span>{word}</span>
-                  </motion.p>
-                ) : (
-                  <motion.div key="name" className="text-center">
-                    <h2 className="sr-only">{profile.name}</h2>
-                    <div className="font-display font-black uppercase leading-[0.9] tracking-[-0.04em]">
-                      <Letters text={FIRST} className="justify-center text-[17vw] text-ink md:text-[9vw]" />
-                      {LAST && (
-                        <Letters text={LAST} delay={0.15} gradient className="justify-center text-[17vw] md:text-[9vw]" />
-                      )}
-                    </div>
-                    <motion.p
-                      className="mt-6 font-mono text-[10px] tracking-[0.3em] uppercase text-ink/70 md:text-xs"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.7, ease: OUT, delay: 0.55 }}
-                    >
-                      {profile.role} <span className="text-red">✦</span> {profile.location.split(",")[0]}
-                    </motion.p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
+              Skip →
+            </button>
+          </div>
 
-            <div>
-              <div className="mb-3 flex items-end justify-between font-mono text-[10px] tracking-[0.3em] uppercase text-muted">
-                <span>{phase === "greet" ? "Loading experience" : "Suiting up"}</span>
-                <span className="tabular-nums text-ink">{String(count).padStart(3, "0")}</span>
-              </div>
-              <div className="h-px w-full bg-line">
-                <div className="h-full bg-gradient-to-r from-red to-gold" style={{ width: `${count}%` }} />
-              </div>
+          {/* portrait ring + name */}
+          <div className="flex flex-col items-center text-center">
+            <div className="relative h-24 w-24 md:h-32 md:w-32" style={{ animation: `intro-pop 700ms ${OUT} 60ms both` }}>
+              <svg viewBox="0 0 100 100" className="absolute inset-0 -rotate-90" aria-hidden="true">
+                <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" strokeWidth="1.2" className="text-ink/10" />
+                <circle
+                  ref={ringRef}
+                  cx="50"
+                  cy="50"
+                  r="46"
+                  fill="none"
+                  stroke="url(#intro-ring)"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeDasharray={RING}
+                  strokeDashoffset={RING}
+                />
+                <defs>
+                  <linearGradient id="intro-ring" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stopColor="#ffb547" />
+                    <stop offset="1" stopColor="#ff2d20" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <span className="absolute inset-[9%] overflow-hidden rounded-full">
+                <Image src={profile.avatar} alt="" fill sizes="128px" loading="eager" className="object-cover" />
+              </span>
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+
+            <h2 className="sr-only">{profile.name}</h2>
+            <div className="mt-7 flex flex-col items-center font-display text-[15vw] font-black uppercase leading-[0.9] tracking-[-0.04em] md:flex-row md:gap-[0.28em] md:text-[7.4vw]">
+              <span className="text-ink">
+                <Letters text={FIRST} delay={180} />
+              </span>
+              {LAST && <Letters text={LAST} delay={330} gradient />}
+            </div>
+            <p
+              className="mt-5 font-mono text-[10px] tracking-[0.3em] uppercase text-ink/70 md:text-xs"
+              style={{ animation: `intro-fade 700ms ${OUT} 700ms both` }}
+            >
+              {profile.role} <span className="text-red">✦</span> {profile.location.split(",")[0]}
+            </p>
+          </div>
+
+          {/* counter + bar */}
+          <div>
+            <div className="mb-3 flex items-end justify-between">
+              <p className="font-display text-[19vw] font-black leading-[0.8] tracking-[-0.06em] tabular-nums text-ink md:text-[8.5vw]">
+                <span ref={countRef}>00</span>
+                <span className="ml-[0.06em] align-top font-mono text-[0.22em] font-normal tracking-normal text-red">%</span>
+              </p>
+              <p className="pb-1 text-right font-mono text-[10px] tracking-[0.3em] uppercase text-muted">
+                Suiting up
+                <br />
+                <span className="text-ink/70">{profile.status}</span>
+              </p>
+            </div>
+            <div className="h-px w-full bg-line">
+              <div ref={barRef} className="h-full origin-left bg-gradient-to-r from-red to-gold" style={{ transform: "scaleX(0)" }} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

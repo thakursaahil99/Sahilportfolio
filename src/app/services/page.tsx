@@ -3,6 +3,7 @@ import ServicesHero from "@/components/services/ServicesHero";
 import Services from "@/components/Services";
 import Process from "@/components/services/Process";
 import Deliverables from "@/components/services/Deliverables";
+import Engagements from "@/components/services/Engagements";
 import Faq from "@/components/services/Faq";
 import ContactCTA from "@/components/ContactCTA";
 
@@ -19,8 +20,9 @@ export default function ServicesPage() {
       <Services index="01" />
       <Process index="02" />
       <Deliverables index="03" />
-      <Faq index="04" />
-      <ContactCTA index="05" />
+      <Engagements index="04" />
+      <Faq index="05" />
+      <ContactCTA index="06" />
     </main>
   );
 }

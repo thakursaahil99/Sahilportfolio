@@ -20,8 +20,11 @@ export const profile = {
   // the point (0–1, from top-left) kept in frame on narrow screens — the face.
   heroImages: {
     superhero: { src: "/hero/superhero.jpg", focus: [0.58, 0.32] as [number, number] },
-    original: { src: "/hero/original.jpg", focus: [0.52, 0.34] as [number, number] },
+    original: { src: "/hero/sahil.jpg", focus: [0.49, 0.3] as [number, number] },
   },
+  // the same photo, cropped for the About page, the menu and small avatars
+  portrait: "/about/sahil.jpg",
+  avatar: "/about/sahil-avatar.jpg",
   roles: [
     "FULL-STACK DEVELOPER",
     "MAGENTO 2 SPECIALIST",
@@ -38,7 +41,9 @@ export const profile = {
   ],
   experienceYears: `${YEARS}+`,
   // Shown on the résumé. Fill in school / year when ready — empty fields are simply left out.
-  education: [{ title: "Full-Stack Web Development", school: "", year: "" }],
+  education: [{ title: "Full-Stack Web Development", school: "Training & internship", year: "2022 — 2023" }],
+  // what I want to go deeper into next
+  focus: ["AI integrations", "Motion & 3D web", "Paragliding tech"],
   socials: [
     { label: "GitHub", href: "https://github.com/thakursaahil99" },
     { label: "LinkedIn", href: "https://linkedin.com/in/sahil-thakur" },
@@ -52,11 +57,11 @@ export const skillGroups = [
   },
   {
     category: "BACKEND",
-    items: ["Node.js", "Express.js", "PHP", "Laravel", "REST APIs", "GraphQL", "JWT Auth"],
+    items: ["Node.js", "Express.js", "NestJS", "Python", "FastAPI", "PHP", "Laravel", "REST APIs", "GraphQL", "WebSockets", "JWT Auth"],
   },
   {
     category: "DATABASE",
-    items: ["MongoDB", "Mongoose", "MySQL", "PostgreSQL", "Firebase"],
+    items: ["PostgreSQL", "Prisma", "MongoDB", "Mongoose", "MySQL", "Redis", "Supabase", "Firebase"],
   },
   {
     category: "COMMERCE",
@@ -64,11 +69,11 @@ export const skillGroups = [
   },
   {
     category: "MOTION & MOBILE",
-    items: ["Framer Motion", "GSAP", "WebGL", "Flutter"],
+    items: ["Framer Motion", "GSAP", "Three.js / R3F", "WebGL", "Flutter", "React Native / Expo"],
   },
   {
     category: "TOOLS & AI",
-    items: ["Git", "GitHub", "Vercel", "Postman", "Figma", "AI Integrations"],
+    items: ["Git", "GitHub", "Docker", "Vercel", "Postman", "Figma", "LLM & RAG integrations"],
   },
 ];
 
@@ -81,15 +86,29 @@ export const skills = [
   { name: "Magento 2 / PHP", years: "4 YRS", match: ["Magento 2", "PHP", "Laravel"] },
   { name: "PostgreSQL / MySQL", years: "4 YRS", match: ["PostgreSQL", "MySQL"] },
   { name: "Motion & 3D", years: "", match: ["GSAP", "Framer Motion", "Three.js"] },
-  { name: "AI integrations", years: "2 YRS", match: ["Ollama", "Qdrant", "Vapi"] },
+  { name: "AI integrations", years: "2 YRS", match: ["Ollama", "Qdrant", "Vapi", "PostgreSQL + pgvector"] },
 ];
 
-// Newest first. Shown on the About page timeline and the résumé.
-// TODO: add the 2022–2023 role(s) at the end, same shape as the entries below.
-export const experience = [
+/** One line in the journey. `kind` separates jobs from client projects on the résumé. */
+export interface Job {
+  company: string;
+  role: string;
+  date: string;
+  kind: "role" | "client";
+  description: string;
+  tech: string[];
+  /** case study in data/projects.ts — gives the entry its screenshot and link */
+  slug?: string;
+  /** shown on the timeline card when there is no case study to take features from */
+  points?: string[];
+}
+
+// The whole journey, newest first. Shown on the About page timeline and the résumé.
+export const experience: Job[] = [
   {
     company: "Glide in Bir",
     slug: "glide-in-bir",
+    kind: "role",
     role: "Founder & Full-Stack Developer",
     date: "2026 — Present",
     description:
@@ -97,8 +116,19 @@ export const experience = [
     tech: ["Next.js", "TypeScript", "Tailwind CSS", "PostgreSQL", "Razorpay"],
   },
   {
+    company: "Redbean Hospitality",
+    slug: "redbean-hospitality",
+    kind: "client",
+    role: "Web Developer",
+    date: "2025 — 2026",
+    description:
+      "Built the company's web presence — corporate site redesigns, the founder's personal-brand sites and an internal role-based HR portal covering tasks, leaves, salary and attendance for eleven departments.",
+    tech: ["Next.js", "React", "Node.js", "Express", "MongoDB", "GSAP"],
+  },
+  {
     company: "Dell Store",
     slug: "dell-store",
+    kind: "client",
     role: "Full-Stack Developer",
     date: "2025",
     description:
@@ -108,10 +138,39 @@ export const experience = [
   {
     company: "PlantShed",
     slug: "plantshed",
+    kind: "client",
     role: "Frontend Developer",
     date: "2024",
     description:
       "Rebuilt the storefront frontend for a plant eCommerce brand, focused on performance and conversion.",
     tech: ["Magento 2", "Tailwind CSS", "Alpine.js"],
   },
+  {
+    company: "Technodeft",
+    kind: "role",
+    role: "Magento & Laravel Developer",
+    date: "2023 — 2026",
+    description:
+      "Developed Magento 2 eCommerce solutions, custom modules, Laravel APIs, admin dashboards and backend systems, with a focus on performance optimisation and scalable applications.",
+    tech: ["Magento 2", "Laravel", "PHP", "MySQL"],
+    points: ["Magento 2 storefronts and custom modules", "Laravel APIs and admin dashboards", "Performance optimisation and backend systems"],
+  },
+  {
+    company: "Training & Internship",
+    kind: "role",
+    role: "Web Development Intern / Trainee",
+    date: "2022 — 2023",
+    description:
+      "Where it started: web development training and an internship covering frontend fundamentals, backend development and database concepts, building real-world web projects.",
+    tech: ["HTML", "CSS", "JavaScript", "PHP", "WordPress"],
+    points: ["Frontend fundamentals — HTML, CSS, JavaScript", "Backend development and database concepts", "First real-world web projects"],
+  },
+];
+
+// Short lines for the résumé and the About fact sheet.
+export const highlights = [
+  "Founder of Glide in Bir — a paragliding booking platform with online payments and an AI voice assistant.",
+  `${projects.length} projects shipped across platforms, eCommerce, AI tools and brand sites.`,
+  "Magento 2 and Next.js storefronts built for speed and conversion.",
+  "Motion and 3D sites with GSAP, Three.js, Lenis and Framer Motion.",
 ];

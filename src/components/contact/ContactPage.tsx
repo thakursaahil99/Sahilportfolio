@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { AnimatePresence, motion, useAnimate } from "framer-motion";
 import { profile } from "@/data/profile";
 import RevealText from "../fx/RevealText";
@@ -158,6 +158,14 @@ export default function ContactPage() {
   const [sent, setSent] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // arriving from a "What do you need?" chip (/contact?type=…): tick that project type
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get("type");
+    if (!wanted || !TYPES.includes(wanted)) return;
+    const id = setTimeout(() => setTypes([wanted]), 0);
+    return () => clearTimeout(id);
+  }, []);
+
   const copyEmail = async () => {
     try {
       await navigator.clipboard.writeText(profile.email);
@@ -237,22 +245,23 @@ export default function ContactPage() {
           initial={{ clipPath: "inset(0% 0% 100% 0% round 28px)" }}
           animate={{ clipPath: "inset(0% 0% 0% 0% round 28px)" }}
           transition={{ duration: 1.3, delay: 0.3, ease: [0.76, 0, 0.24, 1] }}
-          className="group relative h-[340px] overflow-hidden rounded-[28px] md:h-[420px]"
+          className="group relative h-[380px] overflow-hidden rounded-[28px] md:h-[460px]"
         >
           <Image
-            src="/about/glide-snow.jpg"
-            alt="Paraglider above snowy peaks"
+            src={profile.portrait}
+            alt={`${profile.name} — ${profile.role}`}
             fill
             sizes="(min-width: 1024px) 45vw, 90vw"
             loading="eager"
-            className="object-cover transition-transform duration-[1.6s] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
+            className="object-cover object-[50%_18%] transition-transform duration-[1.6s] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-background/30" />
           <div className="absolute inset-0 flex flex-col justify-between p-6 md:p-8">
             <div className="flex items-start justify-between">
               <div>
-                <p className="eyebrow text-ink/70">Currently in</p>
-                <p className="mt-1 font-display text-xl md:text-2xl font-black uppercase">Bir Billing, IN</p>
+                <p className="eyebrow text-ink/70">You&apos;ll be talking to</p>
+                <p className="mt-1 font-display text-xl md:text-2xl font-black uppercase">{profile.name}</p>
+                <p className="mt-1 font-mono text-[10px] tracking-[0.2em] uppercase text-ink/70">{profile.role}</p>
               </div>
               <svg viewBox="0 0 100 100" className="h-20 w-20 animate-spin-slow md:h-24 md:w-24" aria-hidden="true">
                 <defs>
@@ -268,7 +277,7 @@ export default function ContactPage() {
             </div>
             <div className="flex items-end justify-between gap-4">
               <div>
-                <p className="eyebrow text-ink/70">Local time</p>
+                <p className="eyebrow text-ink/70">Local time · {profile.location.split(",")[0]}</p>
                 <p className="mt-1 whitespace-nowrap font-display text-2xl sm:text-3xl md:text-4xl font-black tabular-nums">
                   <LocalClock />
                 </p>
@@ -280,9 +289,9 @@ export default function ContactPage() {
       </div>
 
       {/* ---------- channels ---------- */}
-      <div className="relative mt-14 grid gap-3 [perspective:1400px] sm:grid-cols-2 lg:grid-cols-4">
+      <div className="relative mt-14 grid gap-3 [perspective:1400px] sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
         {[
-          { glyph: "@", label: "Email", value: copied ? "Copied ✓" : "Click to copy", onClick: copyEmail, cursor: "Copy" },
+          { glyph: "@", label: "Email — tap to copy", value: copied ? "Copied ✓" : profile.email, onClick: copyEmail, cursor: "Copy" },
           ...profile.socials.map((s) => ({ glyph: s.label === "GitHub" ? "</>" : "in", label: s.label, value: "Open profile ↗", href: s.href, cursor: "Open" })),
           { glyph: "⚡", label: "Response time", value: "Within 24 hours", cursor: undefined },
         ].map((c, i) => {
@@ -293,7 +302,7 @@ export default function ContactPage() {
               </span>
               <span className="min-w-0 text-left">
                 <span className="eyebrow block">{c.label}</span>
-                <span className={`mt-1 block truncate text-sm ${c.label === "Email" && copied ? "text-[#3ddc84]" : "text-ink"}`}>
+                <span className={`mt-1 block truncate text-sm ${c.glyph === "@" && copied ? "text-[#3ddc84]" : "text-ink"}`}>
                   {c.value}
                 </span>
               </span>
@@ -323,7 +332,7 @@ export default function ContactPage() {
       </div>
 
       {/* ---------- form + process ---------- */}
-      <div className="relative mt-20 grid gap-10 pb-24 md:mt-28 lg:grid-cols-[1.55fr_1fr] lg:gap-16 md:pb-32">
+      <div className="relative mt-20 grid gap-10 pb-16 md:mt-28 lg:grid-cols-[1.55fr_1fr] lg:gap-16 md:pb-20">
         <motion.form
           ref={scope}
           onSubmit={submit}
@@ -423,7 +432,7 @@ export default function ContactPage() {
       </div>
 
       {/* ---------- faq ---------- */}
-      <div className="relative grid gap-10 border-t border-line py-24 md:grid-cols-[260px_1fr] md:gap-16 md:py-32">
+      <div className="relative grid gap-10 border-t border-line py-16 md:grid-cols-[260px_1fr] md:gap-16 md:py-24">
         <div>
           <p className="eyebrow mb-3">[ FAQ ]</p>
           <h2 className="font-display text-2xl font-black uppercase tracking-tight">Good questions</h2>

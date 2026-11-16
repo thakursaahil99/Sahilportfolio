@@ -6,8 +6,6 @@ import SectionTag from "./SectionTag";
 import ScrollLitText from "./fx/ScrollLitText";
 import Counter from "./fx/Counter";
 import VelocityMarquee from "./fx/VelocityMarquee";
-import TLink from "./transition/TLink";
-import PhotoReel from "./PhotoReel";
 
 const MANIFESTO =
   "I build digital armour for brands — fast storefronts, scalable APIs and AI-powered interfaces that feel cinematic, load instantly and convert. Every pixel engineered, every millisecond earned.";
@@ -26,27 +24,10 @@ const TICKER = [
   "AI Interfaces",
 ];
 
-/** `teaser` adds a link through to the full /about page (used on the home page). */
-export default function About({ teaser = false }: { teaser?: boolean }) {
+/** Manifesto, bio and numbers — the body of the /about page. */
+export default function About() {
   return (
     <section id="about" className="relative pt-20 pb-28 md:pt-28 md:pb-40">
-      {teaser && (
-        <>
-          <div className="mb-2 grid gap-6 px-6 md:grid-cols-[1fr_auto] md:items-end md:px-12">
-            <div>
-              <p className="eyebrow mb-4">(00) — Selected screens</p>
-              <h2 className="font-display text-[7vw] md:text-[2.6vw] font-black uppercase leading-[0.95] tracking-[-0.03em]">
-                A wall of things I&apos;ve <span className="text-molten">shipped.</span>
-              </h2>
-            </div>
-            <p className="max-w-xs text-sm leading-relaxed text-muted">
-              Real screens from platforms, storefronts and AI tools — hover any tile to open its case study.
-            </p>
-          </div>
-          <PhotoReel />
-        </>
-      )}
-
       {/* slim tech strip */}
       <div className="mb-24 border-y border-line py-4 md:mb-32">
         <VelocityMarquee baseVelocity={-2}>
@@ -82,20 +63,6 @@ export default function About({ teaser = false }: { teaser?: boolean }) {
             <p className="font-mono text-[11px] tracking-[0.25em] uppercase text-ink/70">
               Based in {profile.location}
             </p>
-            {teaser && (
-              <TLink
-                href="/about"
-                className="group inline-flex items-center gap-3 pt-4 font-mono text-[11px] tracking-[0.25em] uppercase text-ink"
-              >
-                <span className="relative">
-                  The full story
-                  <span className="absolute -bottom-1 left-0 h-px w-full origin-right scale-x-0 bg-gold transition-transform duration-500 group-hover:origin-left group-hover:scale-x-100" />
-                </span>
-                <span className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/30 transition-all duration-500 group-hover:bg-ink group-hover:text-background">
-                  →
-                </span>
-              </TLink>
-            )}
           </motion.div>
 
           <div className="grid grid-cols-2 border-t border-l border-line">

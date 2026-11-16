@@ -10,6 +10,8 @@ import TLink from "./transition/TLink";
 
 const OUT = [0.16, 1, 0.3, 1] as const;
 const pad = (n: number) => String(n).padStart(2, "0");
+// project chips shown per card; the rest sit behind "+N more" (the full index is in the Lab)
+const SHOWN = 5;
 
 /** Shipped projects whose stack includes any of the skill's names (prefix match, e.g. "Next.js 16"). */
 const projectsUsing = (match: string[]) =>
@@ -68,7 +70,7 @@ export default function Arsenal({ index = "03" }: { index?: string }) {
                     </span>
                   </p>
                   <ul className="mt-4 flex flex-wrap gap-1.5">
-                    {used.map((p) => (
+                    {used.slice(0, SHOWN).map((p) => (
                       <li key={p.slug}>
                         <TLink
                           href={`/work/${p.slug}`}
@@ -78,6 +80,16 @@ export default function Arsenal({ index = "03" }: { index?: string }) {
                         </TLink>
                       </li>
                     ))}
+                    {used.length > SHOWN && (
+                      <li>
+                        <TLink
+                          href="/lab"
+                          className="inline-block rounded-full bg-ink/10 px-2.5 py-1 font-mono text-[9px] tracking-[0.15em] uppercase text-gold transition-colors hover:bg-gold hover:text-background"
+                        >
+                          +{used.length - SHOWN} more
+                        </TLink>
+                      </li>
+                    )}
                   </ul>
                 </div>
               </SpotlightCard>

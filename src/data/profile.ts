@@ -136,6 +136,16 @@ export const experience: Job[] = [
     tech: ["Magento 2", "PHP", "Tailwind CSS", "GraphQL"],
   },
   {
+    company: "SanDisk",
+    slug: "sandisk",
+    kind: "client",
+    role: "Developer & Designer",
+    date: "2024 — 2025",
+    description:
+      "Worked on the SanDisk website for almost a year in a dual role — designing pages and components, then building them — across category listings, product pages and campaign sections.",
+    tech: ["Adobe Experience Manager", "Tailwind CSS", "JavaScript", "Figma"],
+  },
+  {
     company: "PlantShed",
     slug: "plantshed",
     kind: "client",

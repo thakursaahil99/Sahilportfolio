@@ -954,6 +954,42 @@ export const projects: Project[] = [
     link: "https://www.dellstore.com",
   },
   {
+    slug: "sandisk",
+    title: "SanDisk",
+    tagline: "Design and development on the SanDisk website",
+    category: "eCommerce",
+    summary:
+      "Almost a year working on the SanDisk website as both developer and designer — the brand's storefront for SSDs, memory cards and flash drives, from campaign banners and category listings to detailed product pages.",
+    overview: [
+      "SanDisk sells a huge catalog — internal and portable SSDs, SD and microSD cards, USB drives — to everyone from gamers to data centres. The site has to make that catalog easy to browse and every product easy to understand.",
+      "I worked on it for almost a year in a dual role: designing pages and components, then building them — so what was designed is exactly what shipped.",
+    ],
+    features: [
+      "Designed and built pages and components for the SanDisk website",
+      "Category listings with filters, sorting and product compare",
+      "Product pages with capacity options, image gallery and specifications",
+      "Campaign banners and feature sections for product launches",
+      "Responsive layouts across desktop, tablet and mobile",
+    ],
+    stack: [
+      { label: "Platform", items: ["Adobe Experience Manager"] },
+      { label: "Frontend", items: ["HTML5", "Tailwind CSS", "JavaScript"] },
+      { label: "Design", items: ["Figma", "UI design"] },
+    ],
+    cover: "/projects/sandisk/cover.jpg",
+    gallery: [
+      { src: "/projects/sandisk/home.jpg", caption: "Home page — campaign hero and shop-by-use links", url: "https://www.sandisk.com" },
+      { src: "/projects/sandisk/product.jpg", caption: "Product page — capacity options and gallery", url: "https://www.sandisk.com" },
+      { src: "/projects/sandisk/product-story.jpg", caption: "Product story and key specs", url: "https://www.sandisk.com" },
+      { src: "/projects/sandisk/campaigns.jpg", caption: "Campaign tiles", url: "https://www.sandisk.com" },
+    ],
+    accent: "red",
+    year: "2024",
+    role: "Developer & Designer",
+    link: "https://www.sandisk.com",
+    outcome: "Close to a year, from 2024 into 2025, designing and building for a global storage brand — the step before going full-stack on Magento 2 with Dell Store.",
+  },
+  {
     slug: "plantshed",
     title: "PlantShed",
     tagline: "Storefront rebuild for a plant eCommerce brand",

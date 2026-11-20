@@ -50,7 +50,8 @@ export const metadata: Metadata = {
   },
   // paste the codes from Google Search Console / Bing Webmaster Tools into these Vercel env vars
   verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
+    // Google Search Console — property https://sahil-thakur-dev.vercel.app (HTML tag method)
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "3mutTnNrBsDzT2sbNKjMNoDtVhCQ_0R6a5jHOYou_Us",
     other: process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION } : undefined,
   },
   formatDetection: { telephone: false },

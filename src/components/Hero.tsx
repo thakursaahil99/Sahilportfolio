@@ -12,7 +12,8 @@ import ScrambleText from "./fx/ScrambleText";
 import Magnetic from "./fx/Magnetic";
 import TLink from "./transition/TLink";
 
-const [FIRST_NAME, ...REST] = profile.name.toUpperCase().split(" ");
+// real case in the markup — the heading is uppercased with CSS
+const [FIRST_NAME, ...REST] = profile.name.split(" ");
 const LAST_NAME = REST.join(" ");
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -96,7 +97,11 @@ export default function Hero() {
 
         {/* name + rail */}
         <div>
+          {/* the two words sit in separate blocks for the layout; the plain-text name below is what
+              search engines and screen readers read, so it is "Sahil Thakur", not "SAHILTHAKUR" */}
           <h1 className="font-display font-black uppercase leading-[0.82] tracking-[-0.04em]">
+            <span className="sr-only">{profile.name} — {profile.role}</span>{" "}
+            <span aria-hidden="true">
             <RevealText
               text={FIRST_NAME}
               split="chars"
@@ -105,6 +110,8 @@ export default function Hero() {
               stagger={0.05}
               className="block text-[20vw] md:text-[10.5vw] text-ink mix-blend-difference"
             />
+            {/* a real space between the words (the blocks make it invisible) */}
+            {LAST_NAME && " "}
             {LAST_NAME && (
               <RevealText
                 text={LAST_NAME}
@@ -115,6 +122,7 @@ export default function Hero() {
                 className="block text-right text-[15vw] md:text-[10.5vw] text-molten"
               />
             )}
+            </span>
           </h1>
 
           {/* hairline that draws across, then the rail under it */}

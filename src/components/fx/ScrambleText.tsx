@@ -15,7 +15,8 @@ interface ScrambleTextProps {
 
 /** Decodes text out of random glyphs, then cycles to the next phrase. */
 export default function ScrambleText({ phrases, className, hold = 2600, start = true }: ScrambleTextProps) {
-  const [output, setOutput] = useState(phrases[0].replace(/\S/g, " "));
+  // start from the real text so it is in the server HTML (search engines, no-JS readers)
+  const [output, setOutput] = useState(phrases[0]);
   const frame = useRef(0);
 
   useEffect(() => {

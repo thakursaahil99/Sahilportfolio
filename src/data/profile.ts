@@ -11,7 +11,7 @@ export const profile = {
   status: "Open to full-time roles",
   email: "sahilthakur961999@gmail.com",
   bio: [
-    "I build fast, scalable and modern digital experiences — from Magento storefronts and Laravel APIs to Node.js services and AI-powered Next.js interfaces.",
+    "I'm a full-stack developer, software engineer and web designer — I design and build fast, scalable websites, web apps and eCommerce stores, from Magento storefronts and Laravel APIs to Node.js services and AI-powered Next.js interfaces.",
     "Currently building Glide in Bir, an all-in-one booking platform for paragliding experiences in Bir Billing, while taking on select freelance eCommerce and web app engagements.",
   ],
   // Hero "x-ray" reveal: the superhero layer shows by default and the

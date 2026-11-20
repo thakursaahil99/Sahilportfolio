@@ -4,12 +4,15 @@ import { experience, highlights, profile, skillGroups } from "@/data/profile";
 import { projects } from "@/data/projects";
 import { SITE_URL } from "@/lib/site";
 import ResumeToolbar from "@/components/resume/ResumeToolbar";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbSchema, pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Résumé — Sahil Thakur",
-  description: `Résumé of ${profile.name}, ${profile.role} — the full journey, skills and selected projects.`,
-  alternates: { canonical: "/resume" },
-};
+export const metadata: Metadata = pageMeta({
+  title: "Résumé — Sahil Thakur, Full-Stack Developer & Software Engineer",
+  description: `Résumé of ${profile.name}, full-stack developer and software engineer — the journey from 2022, skills, client work and selected projects. Download as PDF.`,
+  path: "/resume",
+  type: "profile",
+});
 
 // the case studies a recruiter should see first
 const SELECTED = ["glide-in-bir", "glideinbir-kart", "glideup", "sahu-music", "sahucodex", "quickcart"];
@@ -56,6 +59,7 @@ export default function ResumePage() {
 
   return (
     <main className="relative px-4 pt-32 pb-24 md:px-12 md:pt-40 print:p-0">
+      <JsonLd data={breadcrumbSchema([{ name: "Home", path: "/" }, { name: "Résumé", path: "/resume" }])} />
       <ResumeToolbar />
 
       <article
